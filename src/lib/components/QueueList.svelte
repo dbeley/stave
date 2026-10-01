@@ -9,7 +9,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { app } from '$lib/app.svelte';
-  import { ListCursor, listNavigationBindings } from '$lib/keyboard/list.svelte';
+  import {
+    ListCursor,
+    keepCursorRowVisible,
+    listNavigationBindings,
+  } from '$lib/keyboard/list.svelte';
   import { formatDuration, truncate } from '$lib/utils/format';
   import type { Scope } from '$lib/keyboard/registry.svelte';
 
@@ -35,7 +39,16 @@
   // Whoever renders the rows owns the cursor count: without this `move()` clamps
   // against 0, so j/k are inert and the highlight drifts out of step with the
   // queue's own selection cursor, which is what reorder/remove act on.
+  let container: HTMLDivElement | undefined = $state();
+
   $effect(() => cursor.setCount(items.length));
+
+  // A long queue is taller than the window it sits in, so the cursor has to drag
+  // the list with it — see keepCursorRowVisible.
+  keepCursorRowVisible(
+    () => container,
+    () => cursor.index,
+  );
 
   function playItem(index: number): void {
     const item = items[index];
@@ -133,7 +146,7 @@
   );
 </script>
 
-<div class="rows" role="listbox" aria-label="queue">
+<div class="rows" bind:this={container} role="listbox" aria-label="queue">
   {#each items as item, index (item.uid)}
     <div
       class="row"

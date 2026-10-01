@@ -59,7 +59,12 @@ export class KeyboardRouter {
   bindings = $state.raw<Binding[]>([]);
 
   private readonly options: KeyboardRouterOptions;
-  private pending = '';
+  /**
+   * The half-typed sequence prefix (`g` of `g h`). `$state`, not a plain field:
+   * the status bar and the leader hints read it reactively, and as a plain field
+   * they would only ever have updated by luck.
+   */
+  pending = $state('');
   private timer: unknown = null;
 
   constructor(options: KeyboardRouterOptions) {
@@ -120,6 +125,25 @@ export class KeyboardRouter {
 
   get pendingSequence(): string {
     return this.pending;
+  }
+
+  /**
+   * The bindings that would complete the sequence being typed.
+   *
+   * Powers the leader hints: having pressed `g`, you can see every `g …` binding
+   * that is live right now instead of having to remember them. Filtered by the
+   * same scope rules as `hints()`, so an overlay's prefixes only offer that
+   * overlay's continuations.
+   */
+  continuations(): Binding[] {
+    if (!this.pending) return [];
+    const scopes = this.options.activeScopes();
+    return this.bindings.filter(
+      (binding) =>
+        scopes.includes(binding.scope) &&
+        (!binding.when || binding.when()) &&
+        binding.keys.some((key) => key.startsWith(`${this.pending} `)),
+    );
   }
 
   /**

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
+import { tick } from 'svelte';
+import { KeyboardRouter } from '$lib/keyboard/registry.svelte';
 
 const mocks = vi.hoisted(() => {
   // `$lib/keyboard/list.svelte.ts` is a plain .ts module using `$state`; the Svelte
@@ -122,5 +124,36 @@ describe('ArtistPage', () => {
 
     expect(screen.getByText(/could not load this artist/i)).toBeTruthy();
     expect(screen.getByText(/kaboom/)).toBeTruthy();
+  });
+
+  it('acts on the similar artist under the cursor, not on the artist being viewed', async () => {
+    // Regression: the page-level `o` (the artist you are standing on) used to win
+    // in the similar-artists pane, so asking for actions while hovering a similar
+    // artist gave you actions for the wrong artist entirely.
+    const router = new KeyboardRouter({ activeScopes: () => ['page', 'global'] });
+    const app = makeApp(
+      slice({
+        bio: {
+          biography: 'A synth explorer.',
+          similarArtists: [{ id: 'ar9', name: 'Other Artist', albumCount: 1 }],
+        },
+      }),
+    );
+    app.keyboard = {
+      registerAll: (bindings: unknown) => router.registerAll(bindings as never),
+    };
+    install(app);
+
+    render(ArtistPage);
+    await tick();
+
+    // Tab twice: albums → top tracks → similar artists, then ask for actions.
+    router.handle({ key: 'Tab' });
+    router.handle({ key: 'Tab' });
+    router.handle({ key: 'o' });
+
+    expect(mocks.actions.openArtistActions).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'ar9' }),
+    );
   });
 });

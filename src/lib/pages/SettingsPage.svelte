@@ -305,6 +305,12 @@
     flex: none;
     color: var(--accent);
   }
+  /* The focused row paints itself with the accent, so a value drawn in the accent
+     vanishes into it — measured in the browser, both were rgb(255,140,66). Same
+     fix ListView already applies to .dim and .badge. */
+  :global(.row.selected) .value {
+    color: var(--bg);
+  }
   .info {
     display: grid;
     grid-template-columns: 10ch 1fr;

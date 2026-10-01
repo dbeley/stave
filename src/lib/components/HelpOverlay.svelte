@@ -6,11 +6,16 @@
   import { onMount } from 'svelte';
   import { app } from '$lib/app.svelte';
   import Overlay from '$lib/components/Overlay.svelte';
-  import { ListCursor, listNavigationBindings } from '$lib/keyboard/list.svelte';
+  import {
+    ListCursor,
+    keepCursorRowVisible,
+    listNavigationBindings,
+  } from '$lib/keyboard/list.svelte';
   import { formatChord } from '$lib/keyboard/keys';
   import type { Binding } from '$lib/keyboard/registry.svelte';
 
   let cursor = new ListCursor();
+  let container: HTMLDivElement | undefined = $state();
   let groups = $derived(app.keyboard.grouped());
   /** Flattened rows: a heading followed by its bindings. */
   let rows = $derived(
@@ -28,18 +33,27 @@
   // move() clamps against 0 and navigation is silently inert.
   $effect(() => cursor.setCount(rows.length));
 
+  // …and having rendered its own rows it must scroll them itself too. The help
+  // list is the longest in the app, so it was the most obvious place this was
+  // missing: `j` walked the selection past the bottom edge and the list stayed.
+  keepCursorRowVisible(
+    () => container,
+    () => cursor.index,
+  );
+
   onMount(() =>
     app.keyboard.registerAll(listNavigationBindings(cursor, { scope: 'overlay', hint: false })),
   );
 </script>
 
 <Overlay title="keyboard" note="{rows.length} bindings" width="min(94vw, 84ch)">
-  <div class="rows">
+  <div class="rows" bind:this={container}>
     {#each rows as row, index (index)}
       <div
         class="row"
         class:selected={cursor.isSelected(index)}
         class:heading={row.kind === 'heading'}
+        data-row={index}
       >
         {#if row.kind === 'heading'}
           <span class="group tui-upper">── {row.label}</span>

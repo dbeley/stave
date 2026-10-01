@@ -7,8 +7,7 @@
 -->
 <script lang="ts" generics="T">
   import type { Snippet } from 'svelte';
-  import type { ListCursor } from '$lib/keyboard/list.svelte';
-  import { scrollIntoViewIfNeeded } from '$lib/utils/dom';
+  import { keepCursorRowVisible, type ListCursor } from '$lib/keyboard/list.svelte';
 
   interface Props {
     items: T[];
@@ -34,11 +33,10 @@
   });
 
   // Scroll the selection into view whenever it moves.
-  $effect(() => {
-    const index = followTail ? items.length - 1 : cursor.index;
-    const element = container?.querySelector<HTMLElement>(`[data-row="${index}"]`);
-    scrollIntoViewIfNeeded(element);
-  });
+  keepCursorRowVisible(
+    () => container,
+    () => (followTail ? items.length - 1 : cursor.index),
+  );
 
   function activate(item: T, index: number): void {
     cursor.set(index);

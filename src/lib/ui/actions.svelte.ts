@@ -39,7 +39,11 @@ export class Actions {
   }
 
   async playAlbumNow(album: Album): Promise<void> {
-    await this.app.player.playAlbum(album);
+    const played = await this.app.player.playAlbum(album);
+    if (played === 0) {
+      this.app.toasts.warn(`no tracks in "${album.name}"`);
+      return;
+    }
     this.app.toasts.info(`playing album "${album.name}"`);
   }
 

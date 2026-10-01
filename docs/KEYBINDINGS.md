@@ -7,7 +7,9 @@ Chords are written the way they are typed. A **capital** letter means Shift
 (`G`, not `shift+g`) — for printable keys Shift is part of the character. Named
 keys do take the modifier (`ctrl+d`, `escape`). A space separates a sequence:
 `g h` means `g` then `h`. The status bar shows a pending prefix (e.g. `[g]`)
-while a sequence is half-typed; it expires after ~1.2s.
+while a sequence is half-typed; it expires after ~1.2s. While the prefix is
+pending the hint bar lists **every binding that continues it**, so you can see
+where `g` leads instead of having to remember.
 
 Scope decides who wins when two bindings share a chord:
 **overlay → queue window → page → global**. So an open overlay shadows the page,
@@ -86,6 +88,20 @@ and the page shadows the globals.
 | `L`     | toggle listen later for the track's album                                  |
 | `o`     | action menu                                                                |
 | `y`     | go to the artist                                                           |
+
+## Artist page
+
+Three panes share the page — albums, top tracks, similar artists — and `tab`
+moves between them. Only the focused pane's keys are live, so `j`/`k` and the
+item keys always act on what you can see highlighted.
+
+| key   | action                                                                              |
+| ----- | ----------------------------------------------------------------------------------- |
+| `tab` | switch pane (albums → top tracks → similar artists)                                 |
+| `P`   | play the whole artist                                                               |
+| `F`   | toggle the artist's favourite state                                                 |
+| `o`   | artist actions (on the focused pane's item, so a similar artist gets _its_ actions) |
+| `f`   | toggle the focused similar artist's favourite state                                 |
 
 ## Album page — album-level actions
 

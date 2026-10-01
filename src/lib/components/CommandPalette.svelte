@@ -14,7 +14,11 @@
   import { onMount } from 'svelte';
   import { app } from '$lib/app.svelte';
   import Overlay from '$lib/components/Overlay.svelte';
-  import { ListCursor, listNavigationBindings } from '$lib/keyboard/list.svelte';
+  import {
+    ListCursor,
+    keepCursorRowVisible,
+    listNavigationBindings,
+  } from '$lib/keyboard/list.svelte';
   import type { Binding } from '$lib/keyboard/registry.svelte';
 
   interface Destination {
@@ -100,10 +104,16 @@
   ];
 
   let cursor = new ListCursor();
+  let container: HTMLDivElement | undefined = $state();
 
   // This overlay renders its own rows, so it owns the cursor count: without this
   // move() clamps against 0 and navigation is silently inert.
   $effect(() => cursor.setCount(DESTINATIONS.length));
+
+  keepCursorRowVisible(
+    () => container,
+    () => cursor.index,
+  );
 
   /** Close first, then act: a destination may open another overlay (queue/help). */
   function choose(destination: Destination): void {
@@ -133,12 +143,13 @@
 </script>
 
 <Overlay title="go to" note="{DESTINATIONS.length} places" width="min(94vw, 64ch)">
-  <div class="rows">
+  <div class="rows" bind:this={container}>
     {#each DESTINATIONS as destination, index (destination.label)}
       <button
         type="button"
         class="row"
         class:selected={cursor.isSelected(index)}
+        data-row={index}
         aria-label="go to {destination.label}"
         onclick={() => choose(destination)}
         onmouseenter={() => cursor.set(index)}

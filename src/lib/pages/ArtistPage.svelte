@@ -77,6 +77,35 @@
       ),
       // ---- similar artists (pane 2) ----
       ...guarded(listNavigationBindings(similarCursor, { hint: true, onActivate: openSimilar }), 2),
+      // …and the similar pane owns `o`/`f` for the artist under its cursor. The
+      // page-level `o` further down is for the artist being viewed; without this
+      // it swallowed the key here, so hovering a similar artist and asking for
+      // actions got you the page's artist instead.
+      ...guarded(
+        [
+          {
+            keys: ['o'],
+            scope: 'page' as const,
+            group: 'similar artist',
+            description: 'artist actions',
+            run: () => {
+              const next = similarCursor.selected(similar);
+              if (next) actions.openArtistActions(next);
+            },
+          },
+          {
+            keys: ['f'],
+            scope: 'page' as const,
+            group: 'similar artist',
+            description: 'toggle favourite',
+            run: () => {
+              const next = similarCursor.selected(similar);
+              if (next) void actions.toggleArtistFavorite(next);
+            },
+          },
+        ],
+        2,
+      ),
       {
         keys: ['tab'],
         scope: 'page',

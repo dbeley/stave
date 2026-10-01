@@ -81,12 +81,24 @@
     white-space: nowrap;
   }
   .body {
-    padding: 0.55rem 0.4rem 0.4rem;
+    /*
+     * The title straddles the top border and its glyph box reaches ~10px into the
+     * panel, which used to leave its lower 3px sitting on the first row — measured,
+     * not guessed: titleBottom 49 vs firstTop 46. The top padding is what reserves
+     * the header's space, so nothing is ever drawn under it.
+     */
+    padding: 0.85rem 0.4rem 0.4rem;
     min-height: 0;
   }
   .body.scroll {
     overflow-y: auto;
     overflow-x: hidden;
+    /*
+     * And while scrolling, `scrollIntoView({block:'nearest'})` aligns a row flush
+     * with the scrollport's edge — which is *under* the title. scroll-padding keeps
+     * that edge below the header, so `k` back to the top lands on a visible row.
+     */
+    scroll-padding-top: 0.9rem;
   }
   .body.grow {
     flex: 1;

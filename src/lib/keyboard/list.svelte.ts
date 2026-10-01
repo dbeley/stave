@@ -7,7 +7,7 @@
  * point of a keyboard-first UI.
  */
 
-import { moveIndex } from '$lib/utils/dom';
+import { moveIndex, scrollIntoViewIfNeeded } from '$lib/utils/dom';
 import type { Binding, Scope } from './registry.svelte';
 
 export const HALF_PAGE_ROWS = 10;
@@ -103,6 +103,32 @@ export interface ListBindingOptions {
  *   j/k, ↓/↑   move            gg / G   first / last
  *   ^d/^u      half page       enter     activate
  */
+/**
+ * Keep the cursor's row inside its scrollport as the cursor moves.
+ *
+ * Every list taller than its container needs this. The overlay components render
+ * their own rows instead of going through `ListView`, and each of them forgot it:
+ * `j` walked the selection off the bottom edge while the list itself stayed put.
+ * One implementation, so the next list cannot forget either.
+ *
+ * The row is found by `data-row` and falls back to `.row.selected` for lists that
+ * do not tag their rows.
+ */
+export function keepCursorRowVisible(
+  container: () => HTMLElement | null | undefined,
+  index: () => number,
+): void {
+  $effect(() => {
+    const target = index();
+    const root = container();
+    if (!root) return;
+    const row =
+      root.querySelector<HTMLElement>(`[data-row="${target}"]`) ??
+      root.querySelector<HTMLElement>('.row.selected');
+    scrollIntoViewIfNeeded(row);
+  });
+}
+
 export function listNavigationBindings(
   cursor: ListCursor,
   options: ListBindingOptions = {},

@@ -175,6 +175,50 @@ describe('play() / pause() / toggle()', () => {
   });
 });
 
+describe('playAlbum', () => {
+  type AnyTrack = ReturnType<typeof track>;
+  const clientWithAlbum = (tracks: AnyTrack[]) => ({
+    getAlbum: vi.fn(async () => ({ id: 'al1', name: 'Neon Cartography', tracks })),
+  });
+  const asClient = (client: unknown) => client as unknown as PlayerDeps['client'];
+
+  it('plays straight away when the album already carries its tracks', async () => {
+    const client = clientWithAlbum([]);
+    const { player, queue } = makePlayer({ client: asClient(() => client) });
+
+    const played = await player.playAlbum({
+      id: 'al1',
+      name: 'Neon Cartography',
+      tracks: [track('a'), track('b')],
+    } as never);
+
+    expect(played).toBe(2);
+    expect(queue.items.map((item) => item.track.id)).toEqual(['a', 'b']);
+    expect(client.getAlbum).not.toHaveBeenCalled();
+  });
+
+  it('loads the tracks of an album reached from a list row, then plays them', async () => {
+    // The bug: an album from getAlbumList2 carries no tracks, and playAlbum
+    // returned silently — so "play the album now" did nothing at all while the
+    // caller still reported that it was playing.
+    const client = clientWithAlbum([track('a'), track('b')]);
+    const { player, queue } = makePlayer({ client: asClient(() => client) });
+
+    const played = await player.playAlbum({ id: 'al1', name: 'Neon Cartography' } as never);
+
+    expect(client.getAlbum).toHaveBeenCalledWith('al1');
+    expect(played).toBe(2);
+    expect(queue.items.map((item) => item.track.id)).toEqual(['a', 'b']);
+    expect(player.track?.id).toBe('a');
+  });
+
+  it('reports zero when the album has no tracks at all', async () => {
+    const { player } = makePlayer({ client: asClient(() => clientWithAlbum([])) });
+
+    expect(await player.playAlbum({ id: 'al1', name: 'Neon Cartography' } as never)).toBe(0);
+  });
+});
+
 describe('ended event', () => {
   it('advances to the next track', async () => {
     const { player, queue, audio } = makePlayer();

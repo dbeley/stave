@@ -8,6 +8,17 @@
   import { formatChord } from '$lib/keyboard/keys';
 
   let hints = $derived(app.keyboard.hints().slice(0, 12));
+  let pending = $derived(app.keyboard.pendingSequence);
+  /** Where the half-typed prefix can lead, longest list first-come. */
+  let leader = $derived(app.keyboard.continuations().slice(0, 12));
+
+  /**
+   * The keys that would complete `key` once the pending prefix is typed, e.g.
+   * `h` for the binding `g h` while `g` is pending.
+   */
+  function tailOf(key: string): string {
+    return formatChord(key.slice(pending.length + 1));
+  }
   let toast = $derived(app.toasts.latest);
   let toastClass = $derived(
     toast?.kind === 'error'
@@ -32,7 +43,23 @@
 </script>
 
 <footer class="hints">
-  {#if showHints}
+  {#if pending && leader.length > 0}
+    <!--
+      A sequence is half-typed, so show where it leads instead of the ordinary
+      context hints: the whole point of a leader is that you may not remember
+      what follows it. Announced as a status for screen readers, and it replaces
+      the hints rather than stacking, so nothing reflows.
+    -->
+    <span class="leader" role="status" aria-label="key sequence">
+      <span class="key">[{pending}]</span>
+      {#each leader as binding (binding.keys.join(' '))}
+        <span class="hint">
+          <span class="key">{tailOf(binding.keys[0] ?? '')}</span>
+          <span class="label">{binding.description}</span>
+        </span>
+      {/each}
+    </span>
+  {:else if showHints}
     {#each hints as binding (binding.description)}
       <span class="hint">
         <span class="key">[{formatChord(binding.keys[0] ?? '')}]</span>
@@ -67,6 +94,15 @@
   .hint {
     display: inline-flex;
     gap: 0.25em;
+  }
+  .leader {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9em;
+    overflow: hidden;
+  }
+  .leader > .key {
+    font-weight: 700;
   }
   .key {
     color: var(--accent);

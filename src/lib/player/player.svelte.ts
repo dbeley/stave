@@ -170,11 +170,20 @@ export class PlayerStore {
     await this.playTracks([track], 0);
   }
 
-  /** Play an album from the top (the album page's primary action). */
-  async playAlbum(album: Album): Promise<void> {
+  /**
+   * Play an album from the top (the album page's primary action).
+   *
+   * An album reached from a *list* row carries no tracks, so they are loaded
+   * first. The bare `return` that used to sit here made "play the album now" do
+   * nothing at all from an album list — while the caller still reported success.
+   * Returns how many tracks started, so callers can tell "played" from "empty".
+   */
+  async playAlbum(album: Album): Promise<number> {
     const tracks = album.tracks ?? [];
-    if (tracks.length === 0) return;
-    await this.playTracks(tracks, 0);
+    const playable = tracks.length > 0 ? tracks : await this.loadAlbumTracks(album);
+    if (playable.length === 0) return 0;
+    await this.playTracks(playable, 0);
+    return playable.length;
   }
 
   /**

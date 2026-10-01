@@ -78,7 +78,12 @@ const h = vi.hoisted(() => {
 vi.mock('$lib/app.svelte', () => ({ app: h.app, App: class {} }));
 vi.mock('$lib/ui/actionsRegistry.svelte', () => ({ actions: h.actions }));
 
-vi.mock('$lib/keyboard/list.svelte', () => {
+// A partial mock: everything except the cursor stays real, so adding an export to
+// the module does not silently break these tests (it did when
+// `keepCursorRowVisible` arrived — the mock simply did not have it).
+vi.mock('$lib/keyboard/list.svelte', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('$lib/keyboard/list.svelte')>();
+
   class ListCursor {
     state = { index: 0, count: 0 };
     get index() {
@@ -125,7 +130,13 @@ vi.mock('$lib/keyboard/list.svelte', () => {
       this.state.index = 0;
     }
   }
-  return { ListCursor, listNavigationBindings: () => [] };
+  return {
+    ...actual,
+    ListCursor,
+    listNavigationBindings: () => [],
+    // Nothing to scroll in jsdom; the pages only need it not to throw.
+    keepCursorRowVisible: () => {},
+  };
 });
 
 import ListenLaterPage from '$lib/pages/ListenLaterPage.svelte';
