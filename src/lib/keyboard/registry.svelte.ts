@@ -11,6 +11,7 @@
  */
 
 import { chordOf, isSequencePrefix, parseSequence, type KeyEventLike } from './keys';
+import { untrack } from 'svelte';
 
 export type Scope = 'overlay' | 'queue' | 'page' | 'global';
 
@@ -65,14 +66,20 @@ export class KeyboardRouter {
     this.options = options;
   }
 
-  /** Register one binding; returns an unregister function. */
+  /**
+   * Register one binding; returns an unregister function.
+   *
+   * The read of `bindings` is untracked on purpose: a caller that registers from
+   * inside an `$effect` would otherwise depend on `bindings` and be invalidated by
+   * its own write — looping until Svelte's update-depth guard trips.
+   */
   register(binding: Binding): () => void {
-    this.bindings = [...this.bindings, binding];
+    this.bindings = [...untrack(() => this.bindings), binding];
     return () => this.unregister(binding);
   }
 
   registerAll(bindings: Binding[]): () => void {
-    this.bindings = [...this.bindings, ...bindings];
+    this.bindings = [...untrack(() => this.bindings), ...bindings];
     return () => {
       for (const binding of bindings) this.unregister(binding);
     };
@@ -84,7 +91,8 @@ export class KeyboardRouter {
    * `hints()`/`grouped()` and the one `unregister` matches.
    */
   unregister(binding: Binding): void {
-    this.bindings = this.bindings.filter((existing) => existing !== binding);
+    // Untracked for the same reason as `registerAll`: the caller may be an effect.
+    this.bindings = untrack(() => this.bindings).filter((existing) => existing !== binding);
   }
 
   /** Bindings for the help overlay, grouped by their group label. */
