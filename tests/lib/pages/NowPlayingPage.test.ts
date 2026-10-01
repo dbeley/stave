@@ -133,7 +133,7 @@ describe('NowPlayingPage', () => {
     expect(meta).toContain('2024');
     expect(meta).toContain('MP3');
     expect(meta).toContain('320 kbps');
-    expect(meta).toContain('4m 05s');
+    expect(meta).toContain('4:05');
 
     // Both queue rows are rendered by the shared QueueList.
     expect(screen.getByText('Signal Bloom')).toBeTruthy();

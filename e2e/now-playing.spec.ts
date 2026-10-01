@@ -41,9 +41,12 @@ test.describe('now playing page', () => {
     await expect(meta).toContainText('source');
 
     // The track title is the page heading, and the transport is actionable.
+    // Scope to the page: the now-playing bar stays visible underneath and has a
+    // play/pause button of its own, so an unscoped locator matches two elements.
+    const main = page.locator('main');
     await expect(page.locator('h1')).not.toBeEmpty();
-    await expect(page.getByRole('button', { name: 'seek forward 10 seconds' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'play or pause' })).toBeVisible();
+    await expect(main.getByRole('button', { name: 'seek forward 10 seconds' })).toBeVisible();
+    await expect(main.getByRole('button', { name: 'play or pause' })).toBeVisible();
 
     // The queue is rendered below, as a real list.
     await expect(page.getByRole('listbox', { name: 'queue' })).toBeVisible();

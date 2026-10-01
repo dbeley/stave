@@ -19,7 +19,7 @@
   import { COVER_SIZE } from '$lib/config';
   import { actions } from '$lib/ui/actionsRegistry.svelte';
   import { coverArtIdFor, coverArtUrl } from '$lib/ui/coverArt';
-  import { formatDuration, formatLongDuration } from '$lib/utils/format';
+  import { formatDuration } from '$lib/utils/format';
 
   const player = app.player;
 
@@ -134,7 +134,9 @@
             </dd>
           {/if}
           <dt>duration</dt>
-          <dd>{formatLongDuration(track.durationSec)}</dd>
+          <!-- Precise, unlike the list rows: this is one track, and the long
+               form ("4 min") would hide the seconds of a 4:05 song. -->
+          <dd>{formatDuration(track.durationSec)}</dd>
           {#if track.suffix}
             <dt>format</dt>
             <dd>
