@@ -61,8 +61,11 @@ for entry in "${CATALOG[@]}"; do
   mkdir -p "$album_dir"
 
   # Cover art: a deterministic two-colour gradient, attached to every track.
+  # NOTE: no `speed=` here — ffmpeg 6 (what Ubuntu ships) rejects speed=0 as out
+  # of range while newer ffmpeg tolerates it. The default speed renders the same
+  # frame 0, so leaving it out is both portable and unchanged output.
   ffmpeg -loglevel error -y \
-    -f lavfi -i "gradients=s=600x600:c0=$cover_a:c1=$cover_b:d=1:speed=0" \
+    -f lavfi -i "gradients=s=600x600:c0=$cover_a:c1=$cover_b:d=1" \
     -frames:v 1 "$album_dir/cover.png"
 
   for ((t = 1; t <= tracks; t++)); do
