@@ -51,6 +51,12 @@ format:
 verify:
     pnpm verify
 
+# The full local gate: format, verify, coverage, e2e — the thing to run before
+# pushing. Every step's exit code is checked explicitly; piping a step into
+# grep/head would hide its failure behind the pipe's status again.
+gate:
+    bash scripts/gate.sh
+
 # Type-check Svelte + TS only
 typecheck:
     pnpm typecheck

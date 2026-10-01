@@ -362,6 +362,20 @@
                   path = mockSubsonic;
                 }
               ];
+
+              # Shellcheck the developer gate script as well. It is deliberately
+              # not a `nix run` helper — it drives the dev shell's toolchain and
+              # never commits or pushes — but a lint slip in it would be exactly
+              # as silent as in the scripts above.
+              gate-script =
+                pkgs.runCommand "stave-gate-script-check"
+                  {
+                    nativeBuildInputs = [ pkgs.shellcheck ];
+                  }
+                  ''
+                    shellcheck ${./scripts/gate.sh}
+                    touch $out
+                  '';
             };
 
           formatter = pkgs.nixfmt-rfc-style;
