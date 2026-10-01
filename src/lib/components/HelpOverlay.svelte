@@ -11,7 +11,6 @@
   import type { Binding } from '$lib/keyboard/registry.svelte';
 
   let cursor = new ListCursor();
-
   let groups = $derived(app.keyboard.grouped());
   /** Flattened rows: a heading followed by its bindings. */
   let rows = $derived(
@@ -24,6 +23,10 @@
       })),
     ]),
   );
+
+  // This overlay renders its own rows, so it owns the cursor count: without this
+  // move() clamps against 0 and navigation is silently inert.
+  $effect(() => cursor.setCount(rows.length));
 
   onMount(() =>
     app.keyboard.registerAll(listNavigationBindings(cursor, { scope: 'overlay', hint: false })),

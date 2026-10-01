@@ -273,11 +273,10 @@ describe('ActionMenu', () => {
     expect(fakes.keyboard.bindings.length - baseline).toBe(registered);
   });
 
-  it.fails('moves the highlight so Enter activates the row the user navigated to', async () => {
-    // BUG: the menu builds a ListCursor but never feeds it the row count
-    // (`cursor.setCount(items.length)`), so `j`/`k` clamp against a count of
-    // zero and the cursor is stuck on row 0 — Enter always fires "play album
-    // now" no matter how far the user thinks they have navigated.
+  it('moves the highlight so Enter activates the row the user navigated to', async () => {
+    // Regression: the menu built a ListCursor but never fed it the row count, so
+    // j/k clamped against zero and Enter always fired "play album now" no matter
+    // how far the user had navigated.
     const fakes = mount();
     await tick();
 

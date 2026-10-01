@@ -86,7 +86,15 @@ export class OfflineResolver {
       return { url: existing, source: 'cache' };
     }
 
-    const blob = await this.deps.getBlob(trackId);
+    let blob: Blob | null;
+    try {
+      blob = await this.deps.getBlob(trackId);
+    } catch {
+      // A transient IndexedDB failure must not kill playback. Fall back to
+      // streaming, as prime() already does for cache errors, but keep the id: the
+      // entry is probably still there, so a later resolve can use it.
+      return { url: this.deps.streamUrl(trackId), source: 'stream' };
+    }
     if (!blob) {
       // Metadata lied (evicted by the browser): fall back to streaming.
       this.cachedIds.delete(trackId);

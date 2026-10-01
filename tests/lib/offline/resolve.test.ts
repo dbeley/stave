@@ -142,11 +142,10 @@ describe('resolve()', () => {
     expect(deps.getBlob).toHaveBeenCalledTimes(1);
   });
 
-  it.fails('streams when the blob lookup throws', async () => {
-    // BUG (src/lib/offline/resolve.ts:89): resolve() awaits getBlob() with no
-    // try/catch, so a transient IndexedDB failure rejects the whole resolve —
-    // playback dies instead of falling back to streaming, even though prime()
-    // deliberately treats cache errors as "everything streams".
+  it('streams when the blob lookup throws', async () => {
+    // Regression: resolve() awaited getBlob() unguarded, so a transient IndexedDB
+    // failure rejected the whole resolve and killed playback instead of falling
+    // back to streaming, which is how prime() already treats cache errors.
     const { resolver } = harness({
       getBlob: vi.fn(async () => {
         throw new Error('idb exploded');

@@ -11,6 +11,12 @@
 
   let cursor = new ListCursor();
   let items = $derived(app.queue.items);
+
+  // This overlay renders its own rows, so nothing else syncs the cursor's count.
+  // Without it move() clamps against 0 and j/k are inert — and the highlight then
+  // drifts out of step with the queue's own selection cursor, which is what
+  // reorder/remove act on.
+  $effect(() => cursor.setCount(items.length));
   let playingIndex = $derived(app.queue.state.index);
 
   onMount(() => {

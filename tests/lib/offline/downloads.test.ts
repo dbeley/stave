@@ -198,11 +198,10 @@ describe('already-cached tracks', () => {
     expect((await h.db.getAlbumMeta('a1'))?.trackIds).toEqual(['t1', 't2']);
   });
 
-  it.fails('counts bytes of already-cached tracks in the album total', async () => {
-    // BUG (src/lib/offline/downloads.svelte.ts:258-261): the isTrackReady()
-    // fast path records the track in `trackIds` but never adds its size to
-    // `bytes`, so a resumed/re-downloaded album under-reports the bytes it
-    // actually holds (t1 = 3 already stored, t2 = 3 fetched).
+  it('counts bytes of already-cached tracks in the album total', async () => {
+    // Regression: the already-cached fast path recorded the track id but dropped
+    // its size, so a resumed download under-reported the bytes it holds
+    // (t1 = 3 already stored, t2 = 3 fetched -> 6, not 3).
     const h = makeManager();
     await h.db.putTrack({
       id: 't1',

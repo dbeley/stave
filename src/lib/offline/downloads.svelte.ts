@@ -255,8 +255,17 @@ export class DownloadManager {
 
     for (const track of tracks) {
       if (this.isStale(albumId, token)) return;
-      if (await this.isTrackReady(track.id)) {
+      const cached = await this.trackIfReady(track.id);
+      if (cached) {
+        // Already stored: count it in the album total instead of dropping its
+        // bytes on the floor, or a resumed download under-reports what it holds.
         trackIds.push(track.id);
+        bytes += cached.storedBytes ?? 0;
+        this.patchEntry(albumId, {
+          done: trackIds.length,
+          bytes,
+          updatedAt: this.now(),
+        });
         continue;
       }
 
@@ -341,11 +350,20 @@ export class DownloadManager {
     });
   }
 
-  private async isTrackReady(trackId: string): Promise<boolean> {
+  /**
+   * The stored record for a fully cached track, or null when it is not ready.
+   * Returning the record (not just a boolean) lets callers account for the bytes
+   * already on disk.
+   */
+  private async trackIfReady(trackId: string): Promise<OfflineTrackMeta | null> {
     const existing = await this.deps.db.getTrack(trackId);
-    if (!existing) return false;
+    if (!existing) return null;
     const blob = await this.deps.blobs.get(trackId);
-    return blob !== null;
+    return blob === null ? null : existing;
+  }
+
+  private async isTrackReady(trackId: string): Promise<boolean> {
+    return (await this.trackIfReady(trackId)) !== null;
   }
 
   private async safeListTrackIds(albumId: string): Promise<string[]> {

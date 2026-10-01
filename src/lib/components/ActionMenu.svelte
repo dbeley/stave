@@ -23,6 +23,11 @@
   let target = $derived(app.ui.state.actionTarget);
   let items = $derived<MenuItem[]>(buildItems());
 
+  // The menu renders its own rows, so it owns the cursor count: without this
+  // move() clamps against 0, j/k do nothing, and Enter always activates the
+  // first item regardless of how far the user navigated.
+  $effect(() => cursor.setCount(items.length));
+
   /** Pure: builds the rows for whatever the menu is pointing at. */
   function buildItems(): MenuItem[] {
     if (!target) return [];

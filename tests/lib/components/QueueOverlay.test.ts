@@ -185,11 +185,10 @@ describe('QueueOverlay', () => {
     expect(fakes.keyboard.bindings.length).toBe(baseline);
   });
 
-  it.fails('moves the highlight down with j so reorder/remove follow the visible row', async () => {
-    // BUG: QueueOverlay never calls `cursor.setCount(items.length)` on its
-    // ListCursor, so `move()` clamps against a count of 0 and j/k are inert.
-    // The highlight (and, because remove/move use the separate queue cursor,
-    // the row affected by x/J/K) stay pinned to the first item.
+  it('moves the highlight down with j so reorder/remove follow the visible row', async () => {
+    // Regression: the overlay built a ListCursor but never fed it the row count,
+    // so move() clamped against 0 — j/k were inert and the highlight drifted away
+    // from the queue cursor that x/J/K act on.
     const fakes = mount();
     await tick();
 

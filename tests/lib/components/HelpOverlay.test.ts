@@ -138,4 +138,30 @@ describe('HelpOverlay', () => {
     await tick();
     expect(keyboard.bindings.length - baseline).toBe(registered);
   });
+
+  it('moves the highlight with j so the list can be navigated by keyboard', async () => {
+    // Regression: the overlay built a ListCursor but never fed it the row count,
+    // so move() clamped against 0 and navigation was silently inert.
+    const keyboard = install(makeKeyboard());
+    keyboard.register({
+      keys: ['x x'],
+      scope: 'global',
+      group: 'custom',
+      description: 'second entry',
+      run: () => {},
+    });
+    const { container } = render(HelpOverlay);
+    await tick();
+
+    const selected = () => container.querySelector('.selected')?.textContent?.trim() ?? '';
+    const first = selected();
+    expect(first).not.toBe('');
+
+    const down = keyboard.bindings.find((binding) => binding.keys.includes('j'));
+    if (!down) throw new Error('the overlay registered no j binding');
+    down.run();
+    await tick();
+
+    expect(selected()).not.toBe(first);
+  });
 });
