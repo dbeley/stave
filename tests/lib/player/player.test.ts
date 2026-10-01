@@ -399,3 +399,63 @@ describe('destroy()', () => {
     expect(player.state.position).toBe(position);
   });
 });
+
+describe('toggle() while a start is in flight', () => {
+  /**
+   * `audio.play()` resolves only once the element has actually started, and a
+   * streamed track buffers first. A quick second press of space (or double-tap of
+   * the transport, which is how a phone user does it) therefore arrives while the
+   * start is still pending — and that pause has to stick. It used to be undone:
+   * `play()` set the status only after awaiting, so `toggle()` read a stale
+   * `paused`, started playback again instead of pausing, and the late resolution
+   * then left the player playing.
+   *
+   * Covered here rather than end-to-end because the window is milliseconds wide for
+   * an already-buffered track, which two synthetic key presses cannot reliably
+   * straddle.
+   */
+  function pendingStart(audio: { paused: boolean; play: unknown }) {
+    let finish: () => void = () => {};
+    audio.play = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = () => {
+            audio.paused = false;
+            resolve();
+          };
+        }),
+    );
+    return () => finish();
+  }
+
+  it('keeps the pause when the start resolves late', async () => {
+    const { player, audio } = makePlayer();
+    const finishStart = pendingStart(audio);
+
+    const started = player.playTracks([track('t1')]);
+    await settle(); // loadCurrent() has reached play(), which is now pending
+
+    player.pause(); // the user's second press, before the element started
+    finishStart();
+    await started;
+
+    expect(player.state.status).toBe('paused');
+    expect(player.isPlaying).toBe(false);
+    expect(audio.pause).toHaveBeenCalled();
+  });
+
+  it('lets toggle() stop a start that has not settled yet', async () => {
+    const { player, audio } = makePlayer();
+    const finishStart = pendingStart(audio);
+
+    const started = player.playTracks([track('t1')]);
+    await settle();
+
+    await player.toggle();
+    expect(player.state.status).toBe('paused');
+
+    finishStart();
+    await started;
+    expect(player.state.status).toBe('paused');
+  });
+});

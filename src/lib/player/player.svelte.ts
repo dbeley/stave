@@ -197,17 +197,39 @@ export class PlayerStore {
     return this.enqueue(tracks, mode);
   }
 
+  /**
+   * Latest intended playback generation. `play()` is asynchronous (the element
+   * only resolves once it has buffered), so a later `pause()`/`stop()` must be able
+   * to invalidate an in-flight start.
+   */
+  private playToken = 0;
+
+  /**
+   * Start playback.
+   *
+   * The status flips to `playing` *before* the element has actually started,
+   * because `audio.play()` resolves only after buffering. A second `toggle()`
+   * arriving in that window — a fast double-press of space or double-tap — has to
+   * see "playing" and pause; reading the stale `paused` status made it start
+   * playback again instead, so a quick double-tap could not pause at all.
+   * `playToken` makes the late resolution of a superseded `play()` a no-op.
+   */
   async play(): Promise<void> {
     if (!this.state.track) {
       // Nothing loaded yet: start where the queue points.
       if (!this.deps.queue.isEmpty) await this.loadCurrent(true);
       return;
     }
+    const token = (this.playToken += 1);
+    this.state.status = 'playing';
+    this.mediaSession.setPlaybackState('playing');
     try {
       await this.audio.play();
-      this.state.status = 'playing';
-      this.mediaSession.setPlaybackState('playing');
+      if (token !== this.playToken) return;
+      // Announce the start only if it was not superseded while buffering.
+      if (this.state.track) this.reportNowPlaying(this.state.track);
     } catch (error) {
+      if (token !== this.playToken) return;
       this.state.status = 'error';
       this.state.error = describeError(error);
       this.deps.toasts?.error(`playback failed: ${this.state.error}`);
@@ -215,6 +237,8 @@ export class PlayerStore {
   }
 
   pause(): void {
+    // Supersede any in-flight play(), so its resolution cannot resurrect playback.
+    this.playToken += 1;
     this.audio.pause();
     this.state.status = 'paused';
     this.mediaSession.setPlaybackState('paused');
@@ -226,6 +250,7 @@ export class PlayerStore {
   }
 
   stop(): void {
+    this.playToken += 1;
     this.audio.pause();
     this.audio.currentTime = 0;
     this.state.status = 'idle';
@@ -380,16 +405,11 @@ export class PlayerStore {
     this.updateMediaSession(track, url);
 
     if (autoplay) {
-      try {
-        await this.audio.play();
-        this.state.status = 'playing';
-        this.mediaSession.setPlaybackState('playing');
-        this.reportNowPlaying(track);
-      } catch (error) {
-        this.state.status = 'error';
-        this.state.error = describeError(error);
-        this.deps.toasts?.error(`playback failed: ${this.state.error}`);
-      }
+      // Route through play() rather than duplicating its logic here: the copy that
+      // used to live here set `playing` unconditionally after the await, so a pause
+      // arriving while the element was still starting was silently undone. One
+      // implementation, one place with the token guard.
+      await this.play();
     } else {
       this.state.status = 'paused';
     }

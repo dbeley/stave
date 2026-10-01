@@ -44,9 +44,12 @@ test.describe('queue', () => {
     // Append the whole selected album ("a" on an album row).
     await page.keyboard.press('a');
     await expect
-      .poll(async () => queueLength((await page.locator('header').innerText()).replace(/\s+/g, ' ')), {
-        timeout: 20_000,
-      })
+      .poll(
+        async () => queueLength((await page.locator('header').innerText()).replace(/\s+/g, ' ')),
+        {
+          timeout: 20_000,
+        },
+      )
       .toBeGreaterThan(before);
 
     // The queue window lists what is queued and can remove an item with x.
@@ -66,17 +69,45 @@ test.describe('queue', () => {
     await expect(dialog).toBeHidden();
   });
 
-  test('space toggles playback and n skips', async ({ page }) => {
+  test('space toggles playback, twice in a row too, and n queues the next track', async ({
+    page,
+  }) => {
     await playFirstAlbumTrack(page);
-    const bar = page.locator('#now-playing-bar');
 
-    await page.keyboard.press('Space');
-    await expect(bar).toContainText('>');
-    await page.keyboard.press('Space');
-    await expect(bar).toContainText('||');
+    // The transport glyph is `||` while playing, `>` otherwise, `··` while
+    // buffering. The old version of this test asserted on the whole bar, where
+    // ">>|" trivially satisfied `toContainText('>')`, so it never actually waited
+    // for a state change.
+    const toggle = page.getByRole('button', { name: 'play or pause' });
+    const header = page.locator('header');
 
+    await expect(toggle).not.toHaveText('··'); // let the initial load settle
+    const settled = await toggle.innerText();
+
+    // A press flips it…
+    await page.keyboard.press('Space');
+    await expect(toggle).not.toHaveText(settled);
+    await page.keyboard.press('Space');
+    await expect(toggle).toHaveText(settled);
+
+    // A second press returns it. (The in-flight race that a quick double-press
+    // exposes is covered by a unit test instead: for an already-buffered track the
+    // window is milliseconds wide, which two synthetic key presses cannot straddle.)
+    await page.keyboard.press('Space');
+    await expect(toggle).not.toHaveText(settled);
+    await page.keyboard.press('Space');
+    await expect(toggle).toHaveText(settled);
+
+    // On the album page `n` is the page binding ("play next", i.e. insert after the
+    // current track), which shadows the transport's next-track binding. So this
+    // asserts the queue grows rather than the track changing.
+    const before = queueLength((await header.innerText()).replace(/\s+/g, ' '));
     await page.keyboard.press('n');
-    await expect(bar).toContainText('||');
+    await expect
+      .poll(async () => queueLength((await header.innerText()).replace(/\s+/g, ' ')), {
+        timeout: 10_000,
+      })
+      .toBeGreaterThan(before);
   });
 
   test('favourites and listen later toggle from an album row', async ({ page }) => {

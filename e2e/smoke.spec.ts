@@ -53,6 +53,12 @@ test.describe('smoke', () => {
     await expect(page.locator('header')).toContainText('settings');
   });
 
+  test('key hints are shown on a fine (desktop) pointer', async ({ page }) => {
+    // The counterpart of e2e/mobile.spec.ts, which asserts they are absent on a
+    // coarse pointer. Together they pin the behaviour of the touch detection.
+    await expect(page.locator('footer .hint').first()).toBeVisible();
+  });
+
   test('album list navigates and the cursor moves with j/k', async ({ page }) => {
     await keys(page, 'g a'); // go to albums
     await expect(page.locator('header')).toContainText('albums');
