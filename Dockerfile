@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # Multi-stage build for hosts that are not NixOS.
-#   docker build -t subsonic-tui .
-#   docker run --rm -p 8080:80 subsonic-tui
+#   docker build -t stave .
+#   docker run --rm -p 8080:80 stave
 #
 # The NixOS module is the first-class path (see README); this image exists for
 # everything else.

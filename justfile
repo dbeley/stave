@@ -1,4 +1,4 @@
-# subsonic-tui — task runner
+# stave — task runner
 # Everything is available through `just`; the dev shell provides the tools.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
@@ -41,7 +41,7 @@ e2e:
 
 # Integration tests against a REAL Subsonic server (start `just navidrome` first)
 interop:
-    SUBONIC_IT=1 pnpm vitest run tests/interop
+    STAVE_IT=1 pnpm vitest run tests/interop
 
 # Prettier
 format:
@@ -152,19 +152,19 @@ release v:
     just verify
     git add -A
     git commit -m "chore(release): v{{v}}"
-    git tag -a "v{{v}}" -m "subsonic-tui v{{v}}"
+    git tag -a "v{{v}}" -m "stave v{{v}}"
     git push origin HEAD
     git push origin "v{{v}}"
     just build
-    tar -czf "subsonic-tui-{{v}}-dist.tar.gz" -C dist .
-    files=(subsonic-tui-{{v}}-dist.tar.gz)
+    tar -czf "stave-{{v}}-dist.tar.gz" -C dist .
+    files=(stave-{{v}}-dist.tar.gz)
     if compgen -G "android/app/build/outputs/apk/release/*.apk" > /dev/null; then
       files+=(android/app/build/outputs/apk/release/*.apk)
     fi
     gh release create "v{{v}}" "${files[@]}" --generate-notes --title "v{{v}}"
 
 # Create the GitHub repository and push (one-off; needs gh auth)
-gh-init name="subsonic-tui":
+gh-init name="stave":
     #!/usr/bin/env bash
     set -euo pipefail
     gh repo create {{name}} --public --source=. --remote=origin \
