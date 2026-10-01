@@ -32,9 +32,13 @@ CATALOG=(
 
 # Track titles are generated from a small word pool with a fixed seed so that
 # repeated runs produce identical libraries.
+# Word pools for track titles. They are read through a nameref (`local -n` in
+# `word_at`), which shellcheck cannot follow, so it reports them as unused.
+# shellcheck disable=SC2034
 WORDS_A=(glass circuit hollow amber static velvet binary dusk iron paper
   quiet radiant sodium tessel rust mirror cobalt drift ember lattice
   copper neon marble frozen silt arcade horizon gravel cipher)
+# shellcheck disable=SC2034
 WORDS_B=(theorem drift signal lattice fracture murmur sequence aperture cascade
   interval vestige parallax nocturne threshold vacancy iterance solstice
   gradient alphabet refraction afterimage)

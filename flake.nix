@@ -17,8 +17,16 @@
 
       # NixOS modules are exposed as curried module functions so they can carry
       # the flake's own package as a default without needing `self` in scope.
-      appModule = { pkgs, ... }: import ./nix/module.nix { defaultPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.default; };
-      navidromeModule = { pkgs, ... }: import ./nix/navidrome.nix { appPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.default; };
+      appModule =
+        { pkgs, ... }:
+        import ./nix/module.nix {
+          defaultPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        };
+      navidromeModule =
+        { pkgs, ... }:
+        import ./nix/navidrome.nix {
+          appPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        };
     in
     (flake-utils.lib.eachSystem
       [
@@ -66,7 +74,9 @@
           };
 
           buildSpa =
-            { baseUrl ? "./" }:
+            {
+              baseUrl ? "./",
+            }:
             pkgs.stdenv.mkDerivation {
               pname = "stave";
               version = pkgVersion;
@@ -191,8 +201,12 @@
               deadnix
             ];
 
-            inherit (devEnv) JAVA_HOME PLAYWRIGHT_BROWSERS_PATH
-              PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS;
+            inherit (devEnv)
+              JAVA_HOME
+              PLAYWRIGHT_BROWSERS_PATH
+              PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD
+              PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS
+              ;
 
             shellHook = ''
               export PATH="$PWD/node_modules/.bin:$PATH"
@@ -298,11 +312,31 @@
               inherit tests;
               package = buildSpa { };
               nixos-modules = nixosModulesEval;
+              # Build the helper scripts too. `writeShellApplication` runs
+              # shellcheck, so this is what turns a lint slip in `scripts/*.sh`
+              # into a failing `nix flake check` instead of a broken
+              # `nix run .#seed-library` that nobody notices for hours — which is
+              # exactly how the SC2006 and SC2034 failures above slipped through.
+              helpers = pkgs.linkFarm "stave-helper-scripts" [
+                {
+                  name = "seed-library";
+                  path = seedLibrary;
+                }
+                {
+                  name = "dev-navidrome";
+                  path = devNavidrome;
+                }
+                {
+                  name = "mock-server";
+                  path = mockSubsonic;
+                }
+              ];
             };
 
           formatter = pkgs.nixfmt-rfc-style;
         }
-      ))
+      )
+    )
     // {
       nixosModules = {
         default = appModule;
