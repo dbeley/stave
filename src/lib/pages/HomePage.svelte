@@ -35,8 +35,6 @@
 
   onMount(() =>
     app.keyboard.registerAll([
-      ...listNavigationBindings(activeCursor, { hint: true }),
-      ...albumListBindings(activeCursor, () => activeAlbums),
       {
         keys: ['tab'],
         scope: 'page',
@@ -59,6 +57,22 @@
       },
     ]),
   );
+
+  /**
+   * Re-register the list bindings whenever Tab changes the focused pane.
+   *
+   * A binding holds its cursor by identity, so registering these once in
+   * `onMount` captures the focus-0 cursor: Tab would move the highlight while
+   * j/k kept driving the first pane. The effect tracks `focus` (through
+   * `activeCursor`) and its cleanup swaps the bindings for the new cursor.
+   */
+  $effect(() => {
+    const cursor = activeCursor;
+    return app.keyboard.registerAll([
+      ...listNavigationBindings(cursor, { hint: true }),
+      ...albumListBindings(cursor, () => activeAlbums),
+    ]);
+  });
 </script>
 
 <main class="page">

@@ -21,6 +21,23 @@ test.describe('smoke', () => {
     await expect(page.locator('.row').first()).toBeVisible({ timeout: 20_000 });
   });
 
+  test('tab moves the focused pane, and j/k follow it', async ({ page }) => {
+    // Each pane owns a cursor, and each starts on its first row.
+    const randomRow = page.locator('[aria-label="random albums"] [aria-selected="true"]');
+    const recentRow = page.locator('[aria-label="recently added albums"] [aria-selected="true"]');
+    await expect(randomRow).toHaveAttribute('data-row', '0', { timeout: 20_000 });
+    await expect(recentRow).toHaveAttribute('data-row', '0', { timeout: 20_000 });
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('j');
+
+    // Regression: the list bindings were registered once in onMount with the
+    // focus-0 cursor, so Tab moved the highlight while j kept driving the random
+    // pane. j must move the focused pane and leave the other one untouched.
+    await expect(recentRow).toHaveAttribute('data-row', '1');
+    await expect(randomRow).toHaveAttribute('data-row', '0');
+  });
+
   test('album list navigates and the cursor moves with j/k', async ({ page }) => {
     await keys(page, 'g a'); // go to albums
     await expect(page.locator('header')).toContainText('albums');
@@ -69,7 +86,9 @@ test.describe('smoke', () => {
     // The track title must land in the bar, and the queue must know about it.
     const trackTitle = await page.locator('[aria-label="album tracks"] .row.selected').innerText();
     const title = trackTitle.replace(/\s+/g, ' ').trim().split(' ').slice(1, 4).join(' ');
-    await expect(page.locator('.bar')).toContainText(title.split(' ')[0] ?? '', { timeout: 20_000 });
+    await expect(page.locator('.bar')).toContainText(title.split(' ')[0] ?? '', {
+      timeout: 20_000,
+    });
     await expect(page.locator('header')).toContainText('≡');
   });
 
