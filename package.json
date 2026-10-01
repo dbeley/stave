@@ -1,9 +1,10 @@
 {
   "name": "stave",
   "private": true,
+  "packageManager": "pnpm@12.3.4",
   "version": "0.1.0",
   "type": "module",
-  "description": "A TUI-inspired Subsonic/Navidrome music client — PWA and Android app",
+  "description": "A TUI-inspired Subsonic/Navidrome music client \u2014 PWA and Android app",
   "license": "GPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
@@ -25,10 +26,6 @@
     "android:open": "cap open android",
     "e2e": "playwright test",
     "version:bump": "node scripts/bump-version.mjs"
-  },
-  "pnpm": {
-    "//": "pnpm 10 blocks postinstall scripts by default; esbuild needs its native binary. Keep this list explicit rather than approving builds ad hoc.",
-    "onlyBuiltDependencies": ["esbuild"]
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

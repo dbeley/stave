@@ -1,2 +1,12 @@
+# pnpm reads build-script approvals from this file. The `pnpm` field in
+# package.json is no longer consulted by pnpm 12, so keeping the setting here is
+# what actually works; `onlyBuiltDependencies` is left in place for pnpm 10.
+#
+# esbuild ships a prebuilt native binary through a postinstall script. Skipping it
+# makes pnpm report ERR_PNPM_IGNORED_BUILDS and leaves tooling to fall back on
+# slower paths, so the script is explicitly approved rather than approved ad hoc.
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
+
+onlyBuiltDependencies:
+  - esbuild
