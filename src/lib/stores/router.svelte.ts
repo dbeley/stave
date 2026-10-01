@@ -20,6 +20,7 @@ export type Route =
   | { name: 'favorites' }
   | { name: 'listen-later' }
   | { name: 'search'; query: string }
+  | { name: 'now-playing' }
   | { name: 'settings' };
 
 export const ROUTE_NAMES = [
@@ -33,6 +34,7 @@ export const ROUTE_NAMES = [
   'favorites',
   'listen-later',
   'search',
+  'now-playing',
   'settings',
 ] as const;
 
@@ -59,6 +61,8 @@ export function routeTitle(route: Route): string {
       return 'listen later';
     case 'search':
       return route.query ? `search: ${route.query}` : 'search';
+    case 'now-playing':
+      return 'now playing';
     case 'settings':
       return 'settings';
   }
@@ -96,6 +100,8 @@ export function parseRoute(hash: string): Route {
       return { name: 'listen-later' };
     case 'search':
       return { name: 'search', query: params.get('q') ?? '' };
+    case 'now-playing':
+      return { name: 'now-playing' };
     case 'settings':
       return { name: 'settings' };
     default:
@@ -125,6 +131,8 @@ export function routeToHash(route: Route): string {
       return '#/listen-later';
     case 'search':
       return route.query ? `#/search?q=${encodeURIComponent(route.query)}` : '#/search';
+    case 'now-playing':
+      return '#/now-playing';
     case 'settings':
       return '#/settings';
   }

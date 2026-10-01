@@ -13,7 +13,7 @@
   import { APP_VERSION } from '$lib/config';
   import { platformLabel } from '$lib/offline/platform';
   import { ListCursor, listNavigationBindings } from '$lib/keyboard/list.svelte';
-  import { BITRATE_CHOICES } from '$lib/stores/settings.svelte';
+  import { BITRATE_CHOICES, HOST_THEME } from '$lib/stores/settings.svelte';
 
   /** Cycle choices for the numeric rows (kept local; not user data). */
   const THRESHOLDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
@@ -53,7 +53,9 @@
       {
         id: 'theme',
         label: 'theme',
-        value: () => s.theme,
+        // Name the source: "host" alone would not tell you where it comes from,
+        // and this theme only exists when the deployment supplies a palette.
+        value: () => (s.theme === HOST_THEME ? 'host (stylix)' : s.theme),
         activate: () => app.settings.cycleTheme(1),
         cycle: (direction) => app.settings.cycleTheme(direction),
       },

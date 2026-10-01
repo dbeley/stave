@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   ACCENTS,
   DEFAULT_SETTINGS,
+  HOST_THEME,
   SETTINGS_KEY,
   SettingsStore,
   THEMES,
   applyThemeToDocument,
+  themeChoices,
 } from '$lib/stores/settings.svelte';
 import { memoryStorage } from '../../helpers/storage';
 
@@ -114,5 +116,72 @@ describe('applyThemeToDocument', () => {
     expect(() =>
       applyThemeToDocument({ theme: 'dark', accent: 'mono', crtEffects: false }, null),
     ).not.toThrow();
+  });
+});
+
+describe('host palette (stylix)', () => {
+  it('offers the host theme only when a palette is present', () => {
+    expect(themeChoices(false)).toEqual(THEMES);
+    expect(themeChoices(true)).toEqual([...THEMES, HOST_THEME]);
+    // Default argument follows the runtime config, which is absent under vitest.
+    expect(themeChoices()).toEqual(THEMES);
+  });
+
+  it('applies the palette as inline custom properties', () => {
+    const root = document.createElement('div');
+    applyThemeToDocument({ theme: HOST_THEME, accent: 'orange', crtEffects: false }, root, {
+      bg: '#101418',
+      fg: '#e8e6e3',
+      accent: '#7aa2f7',
+      border: '#2a2e3a',
+    });
+
+    expect(root.dataset.theme).toBe('host');
+    expect(root.style.getPropertyValue('--bg')).toBe('#101418');
+    expect(root.style.getPropertyValue('--fg')).toBe('#e8e6e3');
+    expect(root.style.getPropertyValue('--accent')).toBe('#7aa2f7');
+    expect(root.style.getPropertyValue('--border')).toBe('#2a2e3a');
+    // The palette says nothing about light/dark, so it is inferred from the bg.
+    expect(root.style.colorScheme).toBe('dark');
+  });
+
+  it('infers a light color-scheme from a light background', () => {
+    const root = document.createElement('div');
+    applyThemeToDocument({ theme: HOST_THEME, accent: 'mono', crtEffects: false }, root, {
+      bg: '#faf4ed',
+    });
+    expect(root.style.colorScheme).toBe('light');
+  });
+
+  it('leaves keys the palette omits to the stylesheet', () => {
+    const root = document.createElement('div');
+    applyThemeToDocument({ theme: HOST_THEME, accent: 'orange', crtEffects: false }, root, {
+      bg: '#101418',
+    });
+    expect(root.style.getPropertyValue('--bg')).toBe('#101418');
+    expect(root.style.getPropertyValue('--fg')).toBe('');
+  });
+
+  it('clears the inline colours when switching back to a built-in theme', () => {
+    // Without this the host colours would stick: inline properties outrank the
+    // [data-theme] blocks, so picking "dark" would appear to do nothing.
+    const root = document.createElement('div');
+    const palette = { bg: '#101418', fg: '#e8e6e3', accent: '#7aa2f7' };
+    applyThemeToDocument({ theme: HOST_THEME, accent: 'orange', crtEffects: false }, root, palette);
+    expect(root.style.getPropertyValue('--bg')).toBe('#101418');
+
+    applyThemeToDocument({ theme: 'dark', accent: 'orange', crtEffects: false }, root, palette);
+    expect(root.dataset.theme).toBe('dark');
+    expect(root.style.getPropertyValue('--bg')).toBe('');
+    expect(root.style.getPropertyValue('--accent')).toBe('');
+    expect(root.style.colorScheme).toBe('');
+  });
+
+  it('does nothing extra for a built-in theme even when a palette exists', () => {
+    const root = document.createElement('div');
+    applyThemeToDocument({ theme: 'amoled', accent: 'orange', crtEffects: false }, root, {
+      bg: '#101418',
+    });
+    expect(root.style.getPropertyValue('--bg')).toBe('');
   });
 });

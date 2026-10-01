@@ -4,12 +4,29 @@
  */
 
 import { loadPersisted, savePersisted, type StorageLike, defaultStorage } from '$lib/utils/persist';
+import { HOST_PALETTE, type HostPalette } from '$lib/config';
+import { colorSchemeFor } from '$lib/utils/color';
 
-export type Theme = 'dark' | 'light' | 'amoled';
+/**
+ * Built-in themes, plus `host` when the deployment supplies a palette (stylix).
+ * `host` is deliberately not in THEMES: it is only selectable when it exists.
+ */
+export type Theme = 'dark' | 'light' | 'amoled' | 'host';
 
 export type Accent = 'orange' | 'moss' | 'steel' | 'amber' | 'cyan' | 'magenta' | 'mono';
 
 export const THEMES: readonly Theme[] = ['dark', 'light', 'amoled'];
+
+/** Theme backed by the host's palette rather than our own tokens. */
+export const HOST_THEME: Theme = 'host';
+
+/**
+ * Themes the user may pick. Exposed as a function (not a constant) because it
+ * depends on the runtime config, which is injected before the app boots.
+ */
+export function themeChoices(hasPalette: boolean = HOST_PALETTE !== undefined): readonly Theme[] {
+  return hasPalette ? [...THEMES, HOST_THEME] : THEMES;
+}
 export const ACCENTS: readonly Accent[] = [
   'orange',
   'moss',
@@ -118,8 +135,9 @@ export class SettingsStore {
   }
 
   cycleTheme(direction = 1): void {
-    const index = THEMES.indexOf(this.state.theme);
-    this.setTheme(THEMES[(index + direction + THEMES.length) % THEMES.length]!);
+    const choices = themeChoices();
+    const index = choices.indexOf(this.state.theme);
+    this.setTheme(choices[(index + direction + choices.length) % choices.length]!);
   }
 
   reset(): void {
@@ -135,13 +153,46 @@ export class SettingsStore {
 /** Singleton used by the app; tests construct their own instance. */
 export const settings = new SettingsStore();
 
+/** Palette key → CSS custom property, matching the tokens in `app.css`. */
+const PALETTE_VARS: Record<keyof HostPalette, string> = {
+  bg: '--bg',
+  bgElev: '--bg-elev',
+  bgElev2: '--bg-elev-2',
+  fg: '--fg',
+  fgDim: '--fg-dim',
+  fgFaint: '--fg-faint',
+  border: '--border',
+  borderFocus: '--border-focus',
+  accent: '--accent',
+  accentDim: '--accent-dim',
+  ok: '--ok',
+  warn: '--warn',
+  danger: '--danger',
+  info: '--info',
+};
+
 /** Apply the theme tokens to <html> (called from an effect in App.svelte). */
 export function applyThemeToDocument(
   state: Pick<Settings, 'theme' | 'accent' | 'crtEffects'>,
   root: HTMLElement | null = globalThis.document?.documentElement ?? null,
+  palette: HostPalette | undefined = HOST_PALETTE,
 ): void {
   if (!root) return;
   root.dataset.theme = state.theme;
   root.dataset.accent = state.accent;
   root.dataset.crt = state.crtEffects ? 'on' : 'off';
+
+  // A host palette is applied as *inline* custom properties, which outrank the
+  // stylesheet's [data-theme]/[data-accent] blocks. Clearing them on every other
+  // theme is what makes switching back to a built-in one actually work.
+  const active = state.theme === HOST_THEME ? palette : undefined;
+  for (const [key, property] of Object.entries(PALETTE_VARS)) {
+    const value = active?.[key as keyof HostPalette];
+    if (value) root.style.setProperty(property, value);
+    else root.style.removeProperty(property);
+  }
+
+  // The palette carries no light/dark intent, so infer it from the background.
+  if (active) root.style.colorScheme = colorSchemeFor(active.bg);
+  else root.style.removeProperty('color-scheme');
 }

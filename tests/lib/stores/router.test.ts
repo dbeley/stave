@@ -162,6 +162,7 @@ describe('ROUTE_NAMES', () => {
       'favorites',
       'listen-later',
       'search',
+      'now-playing',
       'settings',
     ]);
   });

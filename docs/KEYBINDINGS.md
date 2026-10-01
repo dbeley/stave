@@ -17,112 +17,129 @@ and the page shadows the globals.
 
 ## Global — work anywhere
 
-| key | action |
-| --- | --- |
-| `space` | play / pause |
-| `n` / `N` | next track |
-| `p` | previous track (restarts the track if you are past 3s) |
-| `s` | toggle shuffle |
-| `r` | cycle repeat: off → all → one |
-| `+` / `=` , `-` | volume up / down |
-| `m` | mute / unmute |
-| `l` / `→` , `h` / `←` | seek forward / back 5s |
-| `0` | restart the current track |
-| `1` … `9` | seek to 10% … 90% |
-| `g h` | home |
-| `g a` | albums |
-| `g r` | artists |
-| `g p` | playlists |
-| `g f` | favourites |
-| `g l` | listen later |
-| `g s` | settings |
-| `q` / `escape` | back / close the current overlay |
-| `z` | next album sort order (on the albums page) |
-| `R` | reload the current view from the server |
-| `:` | go to… — the palette of destinations (also the touch navigation) |
-| `?` | keyboard help |
-| `Q` | queue window |
-| `/` | search (focuses the field) |
-| `T` | cycle theme (dark → light → amoled) |
-| `C` | cycle accent colour |
-| `D` | toggle auto-DJ |
-| `V` | toggle CRT scanline effects |
+| key                   | action                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------- |
+| `space`               | play / pause                                                                            |
+| `n` / `N`             | next track                                                                              |
+| `p`                   | previous track (restarts the track if you are past 3s)                                  |
+| `s`                   | toggle shuffle                                                                          |
+| `r`                   | cycle repeat: off → all → one                                                           |
+| `+` / `=` , `-`       | volume up / down                                                                        |
+| `m`                   | mute / unmute                                                                           |
+| `l` / `→` , `h` / `←` | seek forward / back 5s                                                                  |
+| `0`                   | restart the current track                                                               |
+| `1` … `9`             | seek to 10% … 90%                                                                       |
+| `g h`                 | home                                                                                    |
+| `g a`                 | albums                                                                                  |
+| `g r`                 | artists                                                                                 |
+| `g p`                 | playlists                                                                               |
+| `g f`                 | favourites                                                                              |
+| `g l`                 | listen later                                                                            |
+| `g n`                 | now playing                                                                             |
+| `g s`                 | settings                                                                                |
+| `q` / `escape`        | back / close the current overlay                                                        |
+| `z`                   | next album sort order (on the albums page)                                              |
+| `R`                   | reload the current view from the server                                                 |
+| `:`                   | go to… — the palette of destinations (also the touch navigation)                        |
+| `?`                   | keyboard help                                                                           |
+| `Q`                   | queue window                                                                            |
+| `/`                   | search (focuses the field)                                                              |
+| `T`                   | cycle theme (dark → light → amoled, plus `host` when the deployment supplies a palette) |
+| `C`                   | cycle accent colour                                                                     |
+| `D`                   | toggle auto-DJ                                                                          |
+| `V`                   | toggle CRT scanline effects                                                             |
 
 ## Any list (page scope)
 
-| key | action |
-| --- | --- |
-| `j` / `↓` | move down |
-| `k` / `↑` | move up |
-| `g g` / `home` | first item |
-| `G` / `end` | last item |
-| `ctrl+d` / `pgdn` | half page down |
-| `ctrl+u` / `pgup` | half page up |
-| `enter` | activate (open / play) |
-| `o` | the item's action menu |
+| key               | action                 |
+| ----------------- | ---------------------- |
+| `j` / `↓`         | move down              |
+| `k` / `↑`         | move up                |
+| `g g` / `home`    | first item             |
+| `G` / `end`       | last item              |
+| `ctrl+d` / `pgdn` | half page down         |
+| `ctrl+u` / `pgup` | half page up           |
+| `enter`           | activate (open / play) |
+| `o`               | the item's action menu |
 
 ## Album rows (album list, artist page, home, search)
 
-| key | action |
-| --- | --- |
-| `enter` | open the album page |
-| `p` | play the album now — **replaces the queue** |
-| `n` | play next — queues it right after the current track |
-| `a` | add to the end of the queue |
-| `f` | toggle favourite (server-side star) |
-| `L` | toggle listen later (local only; drives the offline cache) |
-| `o` | action menu |
-| `y` | go to the artist |
+| key     | action                                                     |
+| ------- | ---------------------------------------------------------- |
+| `enter` | open the album page                                        |
+| `p`     | play the album now — **replaces the queue**                |
+| `n`     | play next — queues it right after the current track        |
+| `a`     | add to the end of the queue                                |
+| `f`     | toggle favourite (server-side star)                        |
+| `L`     | toggle listen later (local only; drives the offline cache) |
+| `o`     | action menu                                                |
+| `y`     | go to the artist                                           |
 
 ## Track rows (album page, playlist, artist top tracks, search)
 
-| key | action |
-| --- | --- |
+| key     | action                                                                     |
+| ------- | -------------------------------------------------------------------------- |
 | `enter` | play now — **replaces the queue** with the surrounding list, starting here |
-| `n` | play next |
-| `a` | add to the end of the queue |
-| `f` | toggle favourite |
-| `L` | toggle listen later for the track's album |
-| `o` | action menu |
-| `y` | go to the artist |
+| `n`     | play next                                                                  |
+| `a`     | add to the end of the queue                                                |
+| `f`     | toggle favourite                                                           |
+| `L`     | toggle listen later for the track's album                                  |
+| `o`     | action menu                                                                |
+| `y`     | go to the artist                                                           |
 
 ## Album page — album-level actions
 
 Capital keys, so they never collide with the per-track ones above.
 
-| key | action |
-| --- | --- |
-| `P` | play the whole album |
-| `N` | play the album next |
+| key | action                                |
+| --- | ------------------------------------- |
+| `P` | play the whole album                  |
+| `N` | play the album next                   |
 | `A` | add the album to the end of the queue |
-| `F` | toggle the album's favourite state |
-| `L` | toggle listen later for this album |
+| `F` | toggle the album's favourite state    |
+| `L` | toggle listen later for this album    |
 
 ## Queue window (`Q`)
 
-| key | action |
-| --- | --- |
-| `j` / `k` | move the cursor |
-| `enter` | jump to that track and play it |
-| `x` | remove the selected item |
-| `J` / `K` | move the selected item down / up |
-| `c` | clear the queue |
-| `s` | shuffle the queue |
-| `d` | toggle auto-DJ |
-| `escape` / `q` | close |
+| key            | action                           |
+| -------------- | -------------------------------- |
+| `j` / `k`      | move the cursor                  |
+| `enter`        | jump to that track and play it   |
+| `x`            | remove the selected item         |
+| `J` / `K`      | move the selected item down / up |
+| `c`            | clear the queue                  |
+| `s`            | shuffle the queue                |
+| `d`            | toggle auto-DJ                   |
+| `escape` / `q` | close                            |
 
 ## Home
 
-| key | action |
-| --- | --- |
+| key   | action                                |
+| ----- | ------------------------------------- |
 | `tab` | switch pane (random ↔ recently added) |
-| `r` | reshuffle the random pane |
+| `r`   | reshuffle the random pane             |
 
 ## Albums page
 
-| key | action |
-| --- | --- |
+| key       | action                     |
+| --------- | -------------------------- |
 | `z` / `Z` | next / previous sort order |
+
+## Now playing (`g n`)
+
+The full view of the current track: cover, metadata, progress and transport, with
+the queue underneath (same keys as the queue window, since it is the same list).
+
+| key             | action                                     |
+| --------------- | ------------------------------------------ |
+| `j` / `k`       | move through the queue                     |
+| `enter`         | jump to that track and play it             |
+| `x`             | remove the selected item                   |
+| `J` / `K`       | move the selected item down / up           |
+| `c` / `s` / `d` | clear / shuffle the queue, toggle auto-DJ  |
+| `o`             | the current track's action menu            |
+| `f`             | toggle the current track's favourite state |
+| `y`             | go to the track's artist                   |
 
 ## Search
 
@@ -130,17 +147,17 @@ While the field has focus every keystroke is text; `escape` leaves the field,
 `↓` jumps into the results, `enter` runs the search immediately. In the results,
 navigation and item keys work as for track/album rows, plus:
 
-| key | action |
-| --- | --- |
+| key | action                                            |
+| --- | ------------------------------------------------- |
 | `a` | add to the end of the queue (album or track rows) |
-| `n` | play next |
+| `n` | play next                                         |
 
 ## Settings
 
-| key | action |
-| --- | --- |
-| `j` / `k` | move between rows |
-| `h` / `l` | cycle the value of the focused row |
+| key               | action                                             |
+| ----------------- | -------------------------------------------------- |
+| `j` / `k`         | move between rows                                  |
+| `h` / `l`         | cycle the value of the focused row                 |
 | `enter` / `space` | activate the row (toggle, cycle, or run an action) |
 
 > On the settings page `h`/`l` are the row values, so they shadow the global
@@ -150,5 +167,6 @@ navigation and item keys work as for track/album rows, plus:
 
 Every keyboard action has a visible affordance: rows are clickable, albums and
 tracks carry inline buttons where the action is ambiguous (search results), the
-album page has a toolbar, and long-pressing is never required. Guards exist for
+album page has a toolbar, tapping the now-playing bar opens the now playing page,
+and long-pressing is never required. Guards exist for
 `prefers-reduced-motion` and for text fields, so typing never triggers shortcuts.

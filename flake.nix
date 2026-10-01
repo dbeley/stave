@@ -275,6 +275,13 @@
                       services.stave = {
                         enable = true;
                         hostName = "music.example.org";
+                        # Exercises the palette path. Stylix is not imported in
+                        # this eval, so the explicit option is the only source —
+                        # which is also the branch a non-stylix host uses.
+                        palette = {
+                          accent = "#123456";
+                          bg = "#0a0b0c";
+                        };
                       };
                       services.stave.navidrome = {
                         enable = true;
@@ -287,6 +294,19 @@
                   vhost = cfg.services.nginx.virtualHosts."music.example.org";
                   prefill = cfg.services.stave.server;
                   musicFolder = cfg.services.navidrome.settings.MusicFolder;
+
+                  # The same module without any palette, to prove that "no
+                  # palette" emits no key at all rather than an empty object the
+                  # app would then offer as a broken theme.
+                  plain = pkgs.nixos [
+                    (import ./nix/module.nix { defaultPackage = pkgs.hello; })
+                    {
+                      services.stave.enable = true;
+                      system.stateVersion = "26.11";
+                    }
+                  ];
+                  paletteConfig = "${vhost.root}/config.js";
+                  plainConfig = "${plain.config.services.nginx.virtualHosts."localhost".root}/config.js";
                 in
                 pkgs.runCommand "stave-nixos-modules-check" { } ''
                   set -eu
@@ -304,6 +324,17 @@
                   # …and points the web app at it, so one import is a working stack.
                   [ "${prefill}" = "http://127.0.0.1:4533" ] \
                     || fail "app not pre-filled with the navidrome url (got ${prefill})"
+
+                  # The palette reaches the browser as plain colours…
+                  grep -q '"accent":"#123456"' ${paletteConfig} \
+                    || fail "palette colours missing from the generated config.js"
+                  grep -q '"bg":"#0a0b0c"' ${paletteConfig} \
+                    || fail "palette background missing from the generated config.js"
+
+                  # …while no palette configured means no key at all.
+                  if grep -q '"palette"' ${plainConfig}; then
+                    fail "config.js carries a palette key although none was configured"
+                  fi
 
                   echo "nixos modules evaluate and wire up correctly" > $out
                 '';

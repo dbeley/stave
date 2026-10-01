@@ -1,13 +1,75 @@
-{ defaultPackage ? null }:
+{
+  defaultPackage ? null,
+}:
 {
   config,
   lib,
   pkgs,
+  options,
   ...
 }:
 
 let
   cfg = config.services.stave;
+
+  # Keys the app understands, mirroring HostPalette in src/lib/config.ts. An
+  # unknown key would silently do nothing, so it is an error instead.
+  paletteKeys = [
+    "bg"
+    "bgElev"
+    "bgElev2"
+    "fg"
+    "fgDim"
+    "fgFaint"
+    "border"
+    "borderFocus"
+    "accent"
+    "accentDim"
+    "ok"
+    "warn"
+    "danger"
+    "info"
+  ];
+
+  # Stylix is optional: it is only defined if the user imports it, so every
+  # reference has to be guarded on the option existing at all.
+  stylixColors =
+    if options ? stylix.enable && config.stylix.enable then config.stylix.colors else null;
+
+  # base16 slot → hex string. `withHashtag` is not present in every stylix
+  # version, hence the fallback.
+  hex =
+    name:
+    if stylixColors == null then
+      null
+    else
+      stylixColors.withHashtag.${name} or "#${stylixColors.${name}}";
+
+  # base16 slots → the app's design tokens (base00 background, base05 foreground,
+  # base08-0D the semantic colours).
+  stylixPalette =
+    if stylixColors == null then
+      { }
+    else
+      {
+        bg = hex "base00";
+        bgElev = hex "base01";
+        bgElev2 = hex "base02";
+        border = hex "base02";
+        borderFocus = hex "base03";
+        fgFaint = hex "base03";
+        fgDim = hex "base04";
+        fg = hex "base05";
+        danger = hex "base08";
+        warn = hex "base0A";
+        ok = hex "base0B";
+        info = hex "base0C";
+        accent = hex "base0D";
+        accentDim = hex "base03";
+      };
+
+  # stylix first, then explicit overrides on top.
+  palette = lib.filterAttrs (_: v: v != null) (stylixPalette // cfg.palette);
 
   # Only non-secret values are exposed to the browser. Credentials are entered
   # in-app and stored locally on the client — never served from the host.
@@ -15,6 +77,7 @@ let
     server = cfg.server;
     username = cfg.username;
     instanceName = cfg.instanceName;
+    palette = if palette == { } then null else palette;
   };
 
   configJs = pkgs.writeText "config.js" ''
@@ -69,6 +132,25 @@ in
       description = "Label shown in the app's header instead of the default name.";
     };
 
+    palette = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      example = {
+        accent = "#ff8c42";
+        bg = "#0e1417";
+      };
+      description = ''
+        Colours to write into the app's runtime config, applied on top of the
+        stylix palette when stylix is enabled. Keys mirror the app's design
+        tokens; anything omitted keeps its built-in value, so a partial palette
+        is valid.
+
+        Valid keys: ${lib.concatStringsSep ", " paletteKeys}.
+
+        These are public values — they are served to every browser.
+      '';
+    };
+
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -90,6 +172,17 @@ in
           services.stave.package is unset. Either use the flake's
           nixosModule (which provides a default) or set it explicitly, e.g.
           services.stave.package = inputs.stave.packages.''${pkgs.stdenv.hostPlatform.system}.default;
+        '';
+      }
+      {
+        assertion = lib.all (key: lib.elem key paletteKeys) (lib.attrNames cfg.palette);
+        message = ''
+          services.stave.palette has an unknown key: ${
+            lib.concatStringsSep ", " (
+              lib.filter (key: !(lib.elem key paletteKeys)) (lib.attrNames cfg.palette)
+            )
+          }.
+          Valid keys: ${lib.concatStringsSep ", " paletteKeys}.
         '';
       }
     ];

@@ -47,13 +47,22 @@
   </div>
 
   {#if track}
-    <span class="title" title={track.title}>{truncate(track.title, 34)}</span>
-    <span class="dim">·</span>
-    <span class="dim" title={track.artistName ?? ''}
-      >{truncate(track.artistName ?? 'unknown', 20)}</span
+    <!-- Tapping the identity opens the now-playing page: on a phone this is the
+         natural gesture, and the bar is already the most-tapped surface. -->
+    <button
+      class="identity"
+      title="open the now playing page (g n)"
+      aria-label="open now playing"
+      onclick={() => app.router.navigate({ name: 'now-playing' })}
     >
-    <span class="dim">·</span>
-    <span class="dim" title={track.albumName ?? ''}>{truncate(track.albumName ?? '—', 22)}</span>
+      <span class="title" title={track.title}>{truncate(track.title, 34)}</span>
+      <span class="dim">·</span>
+      <span class="dim" title={track.artistName ?? ''}
+        >{truncate(track.artistName ?? 'unknown', 20)}</span
+      >
+      <span class="dim">·</span>
+      <span class="dim" title={track.albumName ?? ''}>{truncate(track.albumName ?? '—', 22)}</span>
+    </button>
   {:else}
     <span class="dim">nothing playing — press enter on a track, or / to search</span>
   {/if}
@@ -102,6 +111,25 @@
   .key:hover {
     background: var(--accent);
     color: var(--bg);
+  }
+  .identity {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35em;
+    min-width: 0;
+    overflow: hidden;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+  }
+  .identity:hover .title {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
   .title {
     color: var(--fg);

@@ -26,28 +26,29 @@ disagrees with the code, the code wins — but then fix this file.
 
 ## `app` — `import { app } from '$lib/app.svelte'`
 
-| member | what |
-|---|---|
-| `app.settings.state` | `{theme, accent, crtEffects, asciiCoverArt, autoDj, autoDjThreshold, autoDjBatchSize, offlineCacheEnabled, scrobblingEnabled, streamMaxBitRate, volume, pageSize, keyHints, showTechnicalColumns}` |
-| `app.settings.update(patch)` | patch + persist |
-| `app.settings.toggle('autoDj'\|'offlineCacheEnabled'\|…)` | booleans |
-| `app.settings.cycleTheme() / cycleAccent()` | cycles |
-| `app.setOfflineCacheEnabled(bool)` | enables caching *and* starts downloading listen-later albums |
-| `app.clearOfflineCache()` | wipes cached audio |
-| `app.connection` | `{status:'disconnected'\|'connecting'\|'connected'\|'error', error, serverVersion, openSubsonic}` |
-| `app.isConnected`, `app.getClient()`, `app.requireClient()` | connection |
-| `app.connect(creds, {remember})` | login (used by LoginOverlay) |
-| `app.disconnect()` | sign out |
-| `app.router.current` | discriminated `Route` (see `$lib/stores/router.svelte`) |
-| `app.router.navigate(route)` | e.g. `{name:'album', id}`, `{name:'albums', sort}` |
-| `app.ui.state.overlay`, `openOverlay(kind)`, `closeOverlay()`, `openActions(target)` | overlays: `'help'`, `'queue'`, `'login'`, `'actions'` |
-| `app.toasts.info/ok/warn/error(msg)` | status line |
-| `app.keyboard.registerAll(bindings)` | register page bindings |
-| `app.refreshCurrentView()` | reload the current route's data |
+| member                                                                               | what                                                                                                                                                                                               |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app.settings.state`                                                                 | `{theme, accent, crtEffects, asciiCoverArt, autoDj, autoDjThreshold, autoDjBatchSize, offlineCacheEnabled, scrobblingEnabled, streamMaxBitRate, volume, pageSize, keyHints, showTechnicalColumns}` |
+| `app.settings.update(patch)`                                                         | patch + persist                                                                                                                                                                                    |
+| `app.settings.toggle('autoDj'\|'offlineCacheEnabled'\|…)`                            | booleans                                                                                                                                                                                           |
+| `app.settings.cycleTheme() / cycleAccent()`                                          | cycles                                                                                                                                                                                             |
+| `app.setOfflineCacheEnabled(bool)`                                                   | enables caching _and_ starts downloading listen-later albums                                                                                                                                       |
+| `app.clearOfflineCache()`                                                            | wipes cached audio                                                                                                                                                                                 |
+| `app.connection`                                                                     | `{status:'disconnected'\|'connecting'\|'connected'\|'error', error, serverVersion, openSubsonic}`                                                                                                  |
+| `app.isConnected`, `app.getClient()`, `app.requireClient()`                          | connection                                                                                                                                                                                         |
+| `app.connect(creds, {remember})`                                                     | login (used by LoginOverlay)                                                                                                                                                                       |
+| `app.disconnect()`                                                                   | sign out                                                                                                                                                                                           |
+| `app.router.current`                                                                 | discriminated `Route` (see `$lib/stores/router.svelte`)                                                                                                                                            |
+| `app.router.navigate(route)`                                                         | e.g. `{name:'album', id}`, `{name:'albums', sort}`                                                                                                                                                 |
+| `app.ui.state.overlay`, `openOverlay(kind)`, `closeOverlay()`, `openActions(target)` | overlays: `'help'`, `'queue'`, `'login'`, `'actions'`                                                                                                                                              |
+| `app.toasts.info/ok/warn/error(msg)`                                                 | status line                                                                                                                                                                                        |
+| `app.keyboard.registerAll(bindings)`                                                 | register page bindings                                                                                                                                                                             |
+| `app.refreshCurrentView()`                                                           | reload the current route's data                                                                                                                                                                    |
 
 ## Stores
 
 ### `app.library` (`LibraryStore`)
+
 - `list(sort)` → `{items: Album[], loading, error, hasMore, offset, loadedAt}`
 - `loadAlbumList(sort, {refresh?})`, `loadMoreAlbums(sort)` (paginated sorts only)
 - `artists` → `{listing?: {indexes: {name, artists}[], artists, ignoredArticles}, loading, error}`
@@ -58,27 +59,33 @@ disagrees with the code, the code wins — but then fix this file.
 - `invalidate('album'|'artist'|'list'|'all', id?)`
 
 ### `app.favorites`
+
 - `state.{albums, artists, tracks, loading, error}`, `load({refresh?})`
 - `isAlbumStarred(album)`, `isArtistStarred(artist)`, `isTrackStarred(track)`
 - `toggleAlbum(album)`, `toggleArtist(artist)`, `toggleTrack(track)` (optimistic)
 
 ### `app.listenLater` (local, albums only)
+
 - `state.entries` → `{album: Album, addedAt: number}[]`, `albums`, `count`, `isEmpty`
 - `has(albumId)`, `add(album)`, `toggle(album)` → boolean, `remove(albumId)`, `move(from,to)`, `clear()`
 
 ### `app.downloads` (offline cache)
+
 - `entries` → `{albumId, albumName, status:'queued'|'downloading'|'cached'|'failed', total, done, bytes, error, updatedAt}[]`
 - `entry(albumId)`, `isCached(albumId)`, `cachedBytes`
 - `enqueue(album)`, `retry(albumId)`, `cancel(albumId)`, `remove(albumId)`, `hydrate()`
 
 ### `app.resolver`
+
 - `isCached(trackId)` (synchronous), `cachedCount`, `prime()`, `resolve(trackId)` → `{url, source:'cache'|'stream'}`
 
 ### `app.search`
+
 - `state.{query, results: {artists, albums, tracks}, resultsFor, loading, error, total}`
 - `hasQuery`, `setQuery(q)` (debounced), `submit(q?)`, `clear()`
 
 ### `app.player`
+
 - `state.{status:'idle'|'loading'|'playing'|'paused'|'error', track, position, duration, source, error, autoDjAdded}`
 - `history` (recent tracks), `isPlaying`, `progress` (0..1), `remainingSec`, `volume`, `muted`
 - `playTracks(tracks, index)`, `playNow(track, {tracks,index}?)`, `playAlbum(album)`
@@ -103,11 +110,13 @@ disagrees with the code, the code wins — but then fix this file.
 
 ```ts
 const cursor = new ListCursor();
-onMount(() => app.keyboard.registerAll([
-  ...listNavigationBindings(cursor, { hint: true }),          // j k gg G ^d ^u, enter if onActivate
-  ...albumListBindings(cursor, () => albums),                 // enter p n a f L o y
-  ...trackListBindings(cursor, () => tracks, { context: () => ctx }),
-]));
+onMount(() =>
+  app.keyboard.registerAll([
+    ...listNavigationBindings(cursor, { hint: true }), // j k gg G ^d ^u, enter if onActivate
+    ...albumListBindings(cursor, () => albums), // enter p n a f L o y
+    ...trackListBindings(cursor, () => tracks, { context: () => ctx }),
+  ]),
+);
 ```
 
 - `listNavigationBindings(cursor, {onActivate?, onOpen?, scope?, hint?})`
@@ -129,19 +138,19 @@ onMount(() => app.keyboard.registerAll([
 
 ## Components — `$lib/components/`
 
-| component | props |
-|---|---|
-| `Panel` | `title`, `note?: string\|number`, `active?`, `scroll?`, `grow?`, children |
-| `ListView` | `items`, `cursor`, `keyOf?(item,index)`, `onActivate?(item,index)`, `ariaLabel?`; renders `{#snippet row(item, index, selected)}` |
-| `AlbumRow` | `album`, `showArtist?` |
-| `TrackRow` | `track`, `index?`, `showAlbum?`, `technical?` |
-| `ArtistRow` | `artist`, `index?` |
-| `CoverArt` | `coverArtId?`, `seed` (required), `size?`, `columns?`, `mode?: 'auto'\|'ascii'\|'image'`, `ascii?`, `alt?` |
-| `AsciiArt` | `src?`, `seed`, `columns?`, `rows?`, `color?` |
-| `StateMessage` | `kind: 'loading'\|'empty'\|'error'\|'info'`, `message`, `hint?`, `detail?` |
-| `Meter` | `value` (0..1), `width?`, `showPercent?`, `label?` |
-| `Overlay` | `title`, `note?`, `width?`, `closeOnBackdrop?`, children, `footer?` |
-| `LoginOverlay` | `blocking?` |
+| component      | props                                                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `Panel`        | `title`, `note?: string\|number`, `active?`, `scroll?`, `grow?`, children                                                         |
+| `ListView`     | `items`, `cursor`, `keyOf?(item,index)`, `onActivate?(item,index)`, `ariaLabel?`; renders `{#snippet row(item, index, selected)}` |
+| `AlbumRow`     | `album`, `showArtist?`                                                                                                            |
+| `TrackRow`     | `track`, `index?`, `showAlbum?`, `technical?`                                                                                     |
+| `ArtistRow`    | `artist`, `index?`                                                                                                                |
+| `CoverArt`     | `coverArtId?`, `seed` (required), `size?`, `columns?`, `mode?: 'auto'\|'ascii'\|'image'`, `ascii?`, `alt?`                        |
+| `AsciiArt`     | `src?`, `seed`, `columns?`, `rows?`, `color?`                                                                                     |
+| `StateMessage` | `kind: 'loading'\|'empty'\|'error'\|'info'`, `message`, `hint?`, `detail?`                                                        |
+| `Meter`        | `value` (0..1), `width?`, `showPercent?`, `label?`                                                                                |
+| `Overlay`      | `title`, `note?`, `width?`, `closeOnBackdrop?`, children, `footer?`                                                               |
+| `LoginOverlay` | `blocking?`                                                                                                                       |
 
 ## Behaviour contract (from the product spec — do not vary per page)
 

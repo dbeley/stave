@@ -74,6 +74,12 @@
       },
     },
     {
+      key: 'n',
+      label: 'now playing',
+      hint: 'cover, metadata, queue',
+      run: () => app.router.navigate({ name: 'now-playing' }),
+    },
+    {
       key: 'Q',
       label: 'queue',
       hint: 'what plays next, reorder it',

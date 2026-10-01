@@ -20,6 +20,7 @@
   import FavoritesPage from '$lib/pages/FavoritesPage.svelte';
   import HomePage from '$lib/pages/HomePage.svelte';
   import ListenLaterPage from '$lib/pages/ListenLaterPage.svelte';
+  import NowPlayingPage from '$lib/pages/NowPlayingPage.svelte';
   import PlaylistPage from '$lib/pages/PlaylistPage.svelte';
   import PlaylistsPage from '$lib/pages/PlaylistsPage.svelte';
   import SearchPage from '$lib/pages/SearchPage.svelte';
@@ -73,6 +74,8 @@
       <ListenLaterPage />
     {:else if route.name === 'search'}
       <SearchPage />
+    {:else if route.name === 'now-playing'}
+      <NowPlayingPage />
     {:else if route.name === 'settings'}
       <SettingsPage />
     {/if}

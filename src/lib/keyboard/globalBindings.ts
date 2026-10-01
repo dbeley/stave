@@ -177,6 +177,14 @@ export function createGlobalBindings(app: App): Binding[] {
       run: () => router.navigate({ name: 'listen-later' }),
     },
     {
+      keys: ['g n'],
+      scope: 'global',
+      group: GROUPS.navigate,
+      description: 'go to now playing',
+      hint: true,
+      run: () => router.navigate({ name: 'now-playing' }),
+    },
+    {
       keys: ['g s'],
       scope: 'global',
       group: GROUPS.navigate,

@@ -64,6 +64,14 @@
   color-scheme: light;
 }
 
+/* Host palette (stylix): the colours themselves arrive as inline custom
+   properties from the runtime config, so this only supplies what a palette
+   cannot express. */
+[data-theme='host'] {
+  --scanline: rgba(127, 127, 127, 0.03);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
 /* Accents — borrowed from the palette school of dmt / Terminus */
 [data-accent='orange'] {
   --accent: #ff8c42;

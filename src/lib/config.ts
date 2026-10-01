@@ -10,6 +10,32 @@ export interface RuntimeConfig {
   server?: string;
   username?: string;
   instanceName?: string;
+  /**
+   * Colours the host wants the app to use (see `stylix` in the NixOS module).
+   * Public by nature — this is a colour scheme, not a credential.
+   */
+  palette?: HostPalette;
+}
+
+/**
+ * The colours a host may inject. Keys mirror the design tokens in `app.css`;
+ * anything omitted keeps the built-in value, so a partial palette is valid.
+ */
+export interface HostPalette {
+  bg?: string;
+  bgElev?: string;
+  bgElev2?: string;
+  fg?: string;
+  fgDim?: string;
+  fgFaint?: string;
+  border?: string;
+  borderFocus?: string;
+  accent?: string;
+  accentDim?: string;
+  ok?: string;
+  warn?: string;
+  danger?: string;
+  info?: string;
 }
 
 const runtime: RuntimeConfig =
@@ -18,6 +44,15 @@ const runtime: RuntimeConfig =
     : undefined) ?? {};
 
 export const RUNTIME_CONFIG: RuntimeConfig = runtime;
+
+/**
+ * The host's palette, or undefined when there is nothing usable.
+ *
+ * An empty object is treated as absent: the NixOS module always writes the key,
+ * so "stylix is off" must not offer a theme that renders with no colours at all.
+ */
+export const HOST_PALETTE: HostPalette | undefined =
+  runtime.palette && Object.keys(runtime.palette).length > 0 ? runtime.palette : undefined;
 
 /** Identifies this client to the server (`c=` parameter). */
 export const CLIENT_NAME = 'stave';

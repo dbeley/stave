@@ -72,7 +72,7 @@ Rules that the code follows:
 
 - state is written through methods, never by reaching into a store's fields from
   a component (the fields are public for reading only by convention);
-- collections that hold *behaviour* (the keyboard binding registry) use
+- collections that hold _behaviour_ (the keyboard binding registry) use
   `$state.raw`, not `$state`: deep proxying replaces every element with a proxy,
   which silently breaks identity — and identity is what `unregister()` and the
   overlay checks rely on. Data collections (queue items, albums) use plain
@@ -86,14 +86,14 @@ Rules that the code follows:
 
 ## Sequence: mounting, connecting and loading
 
-The shell (and the page it is showing) mounts *before* the first successful
+The shell (and the page it is showing) mounts _before_ the first successful
 connection, because the login overlay is part of the same tree. A page's initial
 `$effect` therefore runs with no client. `App.onConnected()` finishes by
 refreshing the current view, which is what turns the initial "not connected"
 panes into real data exactly once — the alternative (each page watching the
 connection itself) is nine places to get wrong instead of one.
 
-The same shape applies to `/`: the shortcut navigates *and* asks for focus in the
+The same shape applies to `/`: the shortcut navigates _and_ asks for focus in the
 same tick, so the search page counts focus requests from zero rather than
 snapshotting the current counter at mount time (which would already include the
 request that created it).
@@ -105,7 +105,7 @@ intent into queue operations, URL resolution, scrobbles and auto-DJ refills.
 
 - **Queue**: `QueueStore` is pure list manipulation plus a cursor — `set`,
   `append`, `insertAfterCurrent`, `remove`, `move`, `next`/`previous`, repeat
-  modes, and shuffle that shuffles only the *tail* (so the current track keeps
+  modes, and shuffle that shuffles only the _tail_ (so the current track keeps
   playing) while remembering the pristine order to restore.
 - **URL resolution**: the player asks an injected resolver, which returns either
   a stream URL or a local blob URL. This is the seam that makes the offline
@@ -117,7 +117,7 @@ intent into queue operations, URL resolution, scrobbles and auto-DJ refills.
   (`getSimilarSongs2`, seeded by the last few played tracks) → local heuristics
   over a random sample (genre/era/artist/album scoring, all pure and tested) →
   anything from the library. It never stalls, and it refills when the queue is
-  *nearly* empty rather than only at the end, so playback does not gap.
+  _nearly_ empty rather than only at the end, so playback does not gap.
 
 ## Offline cache
 
@@ -129,7 +129,7 @@ intent into queue operations, URL resolution, scrobbles and auto-DJ refills.
 - `offline/blobStore.ts` — where bytes physically live: IndexedDB on the web,
   the Capacitor app data directory on Android, in memory for tests.
 - `offline/downloads.svelte.ts` — a cancellable, concurrency-limited queue. The
-  cancellation token is registered *synchronously before the first await* and
+  cancellation token is registered _synchronously before the first await_ and
   re-checked before **every** write, so cancelling or removing an album cannot
   be raced into resurrecting its data. Only `downloading` (interrupted) entries
   resume on start-up; `failed` ones wait for an explicit retry.
@@ -149,12 +149,12 @@ so rather than pretending the feature is broken.
 
 ## Testing
 
-| level | what it covers |
-| --- | --- |
-| unit | `md5` (RFC vectors), URL/auth building, wire→domain mapping, cache TTL/LRU, error taxonomy, formatting, persistence envelopes, route parsing |
-| logic | queue manipulation and shuffle/unshuffle, auto-DJ scoring and fallbacks, scrobble thresholds, download race/cancel, resolver object-URL cap, binding routing and sequences |
-| component | list rendering and cursor behaviour, row badges, overlays, settings toggles |
-| e2e (Playwright) | the real production build against the mock Subsonic server, driven entirely by the keyboard: login, browse, open an album, play, queue, search, help |
+| level            | what it covers                                                                                                                                                             |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| unit             | `md5` (RFC vectors), URL/auth building, wire→domain mapping, cache TTL/LRU, error taxonomy, formatting, persistence envelopes, route parsing                               |
+| logic            | queue manipulation and shuffle/unshuffle, auto-DJ scoring and fallbacks, scrobble thresholds, download race/cancel, resolver object-URL cap, binding routing and sequences |
+| component        | list rendering and cursor behaviour, row badges, overlays, settings toggles                                                                                                |
+| e2e (Playwright) | the real production build against the mock Subsonic server, driven entirely by the keyboard: login, browse, open an album, play, queue, search, help                       |
 
 The mock server (`tools/mock-subsonic/`) is dependency-free: it parses real
 ID3v2 and FLAC tags from a generated library, supports range requests (so
@@ -170,7 +170,7 @@ forgiving than the real server. Two such differences are pinned there:
 - it returns an empty biography rather than an error when Last.fm is not
   configured — which is why artist pages degrade instead of failing.
 
-`nix flake check` runs the unit tests *and* evaluates both NixOS modules in a
+`nix flake check` runs the unit tests _and_ evaluates both NixOS modules in a
 real system configuration, which catches option typos that would otherwise only
 appear on a deploy.
 

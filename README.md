@@ -23,6 +23,7 @@ entirely by the keyboard, vim-style.
 ## Features
 
 **Browsing**
+
 - Home page: random albums + recently added albums, side by side.
 - Album list: random, recently added, recently played, most played, album A-Z,
   artist A-Z.
@@ -32,6 +33,7 @@ entirely by the keyboard, vim-style.
 - Playlists, favourites (server-side stars) and **listen later** (local only).
 
 **Playback**
+
 - Queue management: reorder (`J`/`K`), remove (`x`), clear, jump, shuffle,
   repeat off/all/one.
 - Every album/track can be played now, **played next** or **added to the end of
@@ -43,6 +45,7 @@ entirely by the keyboard, vim-style.
 - Scrobbling via the Subsonic `scrobble` API, with "now playing" reporting.
 
 **Offline**
+
 - Optional offline cache, **off by default**, enabled in settings. It downloads
   the albums on your listen-later list; playback then prefers the local copy and
   the UI shows where each track is coming from (`▣ local` / `≈ stream`).
@@ -51,6 +54,7 @@ entirely by the keyboard, vim-style.
 - Listen later is never sent to the server — it is a private local list.
 
 **Interface**
+
 - Themes: dark, light, AMOLED. Accent colours (including a monochrome one).
 - Optional CRT scanline overlay, ASCII cover art, dense technical columns.
 - MediaSession integration: lock screen / notification / head-unit controls.
@@ -133,18 +137,64 @@ pre-fills the web app.
 
 Other flake outputs:
 
-| output | what |
-| --- | --- |
-| `packages.default` | the built SPA (`nix build`) |
-| `packages.spa-subpath` | same, built to be served under `/stave/` |
-| `packages.seed-library` | generate the royalty-free demo library |
-| `packages.dev-navidrome` | throwaway Navidrome on that library |
-| `packages.mock-subsonic` | mock Subsonic server for tests |
-| `devShells.default` | the full toolchain |
-| `checks.*` | unit tests and NixOS module evaluation (`nix flake check`) |
-| `overlays.default` | adds `pkgs.stave` |
+| output                   | what                                                       |
+| ------------------------ | ---------------------------------------------------------- |
+| `packages.default`       | the built SPA (`nix build`)                                |
+| `packages.spa-subpath`   | same, built to be served under `/stave/`                   |
+| `packages.seed-library`  | generate the royalty-free demo library                     |
+| `packages.dev-navidrome` | throwaway Navidrome on that library                        |
+| `packages.mock-subsonic` | mock Subsonic server for tests                             |
+| `devShells.default`      | the full toolchain                                         |
+| `checks.*`               | unit tests and NixOS module evaluation (`nix flake check`) |
+| `overlays.default`       | adds `pkgs.stave`                                          |
 
 A `Dockerfile` is included for hosts that are not NixOS (`docker build -t stave .`).
+
+---
+
+## Theming, including stylix
+
+Themes are picked with `T` (or in the settings page): `dark`, `light`, `amoled`,
+and — when your deployment supplies one — `host`.
+
+`host` uses a palette the module writes into the app's runtime config. If you use
+[stylix](https://github.com/nix-community/stylix), its colours are picked up
+automatically, so the app matches the rest of your desktop:
+
+```nix
+services.stave = {
+  enable = true;
+  hostName = "music.example.org";
+  # nothing else to do
+};
+```
+
+When `stylix.enable` is set, its base16 palette is mapped onto the app's tokens
+(background, foreground, borders, accent, and the semantic colours). Stylix is
+_not_ a dependency of this flake — the module only reads it if it is already in
+your configuration, and stays out of the way otherwise.
+
+You can also supply or override colours directly, with or without stylix:
+
+```nix
+services.stave.palette = {
+  accent = "#ff8c42";
+  bg = "#0e1417";
+};
+```
+
+Valid keys: `bg`, `bgElev`, `bgElev2`, `fg`, `fgDim`, `fgFaint`, `border`,
+`borderFocus`, `accent`, `accentDim`, `ok`, `warn`, `danger`, `info`. Anything
+omitted keeps its built-in value, and an unknown key is an evaluation error
+rather than a colour that silently does nothing. With stylix enabled these are
+applied _on top_ of its palette, so you only set what you want to differ.
+
+These are public values, like the pre-filled server URL: they are served to every
+browser in `config.js`. No credentials are ever written there.
+
+With neither stylix nor an explicit palette, the `host` theme is not offered at
+all — the app falls back to its own token sets, which is what you want on a phone
+or on a machine whose desktop you are not theming.
 
 ---
 
