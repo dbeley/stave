@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to publish (e.g. v0.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  release:
+    name: build artifacts and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify before releasing
+        run: pnpm verify
+
+      - name: Build
+        run: pnpm build
+
+      - name: Package the web build
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          tar -czf "stave-${TAG}-dist.tar.gz" -C dist .
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "stave-${TAG}-dist.tar.gz" --clobber
+          else
+            gh release create "$TAG" "stave-${TAG}-dist.tar.gz" \
+              --title "$TAG" --generate-notes
+          fi
