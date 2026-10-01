@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/svelte';
+import { tick } from 'svelte';
 
 const mocks = vi.hoisted(() => {
   // `$lib/keyboard/list.svelte.ts` is a plain .ts module using `$state`; the Svelte
@@ -132,5 +133,63 @@ describe('ArtistsPage', () => {
 
     expect(await screen.findByText(/could not load artists/i)).toBeTruthy();
     expect(screen.getByText(/boom/)).toBeTruthy();
+  });
+
+  it('jumps to the letter bucket when its shortcut is pressed', async () => {
+    install(
+      makeApp({
+        loading: false,
+        error: undefined,
+        listing: {
+          ignoredArticles: '',
+          indexes: [
+            { name: 'A', artists: [artist('a1', 'Aurelia Vance', 2)] },
+            { name: 'B', artists: [artist('b1', 'Boards of Canada', 3)] },
+          ],
+          artists: [],
+        },
+      }),
+    );
+
+    render(ArtistsPage);
+    await screen.findByText('Boards of Canada');
+
+    const bindings = mocks.app.keyboard.registerAll.mock.calls.flatMap((call: any[]) => call[0]);
+    const jumpB = bindings.find((b: any) => b.keys.includes('b'));
+    expect(jumpB).toBeTruthy();
+
+    jumpB.run();
+    await tick();
+
+    const row = screen.getByText('Boards of Canada').closest('[role="option"]');
+    expect(row?.getAttribute('aria-selected')).toBe('true');
+    expect(
+      screen.getByText('Aurelia Vance').closest('[role="option"]')?.getAttribute('aria-selected'),
+    ).toBe('false');
+  });
+
+  it('reports a letter that has no artists', async () => {
+    install(
+      makeApp({
+        loading: false,
+        error: undefined,
+        listing: {
+          ignoredArticles: '',
+          indexes: [{ name: 'A', artists: [artist('a1', 'Aurelia Vance', 2)] }],
+          artists: [],
+        },
+      }),
+    );
+
+    render(ArtistsPage);
+    await screen.findByText('Aurelia Vance');
+
+    const bindings = mocks.app.keyboard.registerAll.mock.calls.flatMap((call: any[]) => call[0]);
+    const jumpZ = bindings.find((b: any) => b.keys.includes('z'));
+    expect(jumpZ).toBeTruthy();
+
+    jumpZ.run();
+
+    expect(mocks.app.toasts.info).toHaveBeenCalledWith(expect.stringContaining('Z'));
   });
 });

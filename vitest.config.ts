@@ -32,10 +32,13 @@ export default defineConfig({
       include: ['src/lib/**/*.{ts,svelte}'],
       exclude: ['src/lib/**/*.d.ts'],
       thresholds: {
-        lines: 60,
-        functions: 55,
-        branches: 60,
-        statements: 60,
+        // A floor just below where the suite actually sits (~81% lines / ~87%
+        // branches / ~75% functions), so a regression has to be real to fail the
+        // build instead of the gate sitting far below reality and never biting.
+        lines: 75,
+        functions: 70,
+        branches: 80,
+        statements: 75,
       },
     },
   },
