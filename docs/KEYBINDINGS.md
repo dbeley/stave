@@ -39,6 +39,7 @@ and the page shadows the globals.
 | `q` / `escape` | back / close the current overlay |
 | `z` | next album sort order (on the albums page) |
 | `R` | reload the current view from the server |
+| `:` | go to… — the palette of destinations (also the touch navigation) |
 | `?` | keyboard help |
 | `Q` | queue window |
 | `/` | search (focuses the field) |

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 
 const h = vi.hoisted(() => ({
@@ -46,6 +46,7 @@ function install(overrides: Overrides = {}) {
     },
     queue: { length: overrides.queueLength ?? 0 },
     router: { current: overrides.route ?? { name: 'albums', sort: 'newest' } },
+    ui: { openOverlay: vi.fn() },
   };
   for (const key of Object.keys(h.app)) delete h.app[key];
   Object.assign(h.app, app);
@@ -130,6 +131,16 @@ describe('StatusBar', () => {
     expect(screen.getByTitle('waiting for the rest of the key sequence').textContent).toContain(
       '[g]',
     );
+  });
+
+  it('offers a tappable entry point for navigation, the only one on touch', async () => {
+    const app = await mount();
+
+    const chip = screen.getByRole('button', { name: 'open the go-to palette' });
+    expect(chip.textContent).toContain('[:]');
+
+    await fireEvent.click(chip);
+    expect(app.ui.openOverlay).toHaveBeenCalledWith('palette');
   });
 });
 

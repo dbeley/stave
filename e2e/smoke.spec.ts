@@ -38,6 +38,21 @@ test.describe('smoke', () => {
     await expect(randomRow).toHaveAttribute('data-row', '0');
   });
 
+  test('the go-to palette navigates by tap and by keyboard', async ({ page }) => {
+    // Touch path: on a phone the status-bar chip is the only navigation there is.
+    await page.getByRole('button', { name: 'open the go-to palette' }).click();
+    await expect(page.getByRole('dialog', { name: 'go to' })).toBeVisible();
+    await page.getByRole('button', { name: 'go to artists' }).click();
+    await expect(page.locator('header')).toContainText('artists');
+
+    // Keyboard path: `:` opens the same palette.
+    await keys(page, 'g h');
+    await page.keyboard.press(':');
+    await expect(page.getByRole('dialog', { name: 'go to' })).toBeVisible();
+    await page.getByRole('button', { name: 'go to settings' }).click();
+    await expect(page.locator('header')).toContainText('settings');
+  });
+
   test('album list navigates and the cursor moves with j/k', async ({ page }) => {
     await keys(page, 'g a'); // go to albums
     await expect(page.locator('header')).toContainText('albums');

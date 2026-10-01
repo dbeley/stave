@@ -89,3 +89,37 @@ Because `PlayerStore` takes its `AudioPort` by injection, option 2 or 3 is a
 change to `createHtmlAudio`'s replacement plus a Capacitor dependency — no page
 or store code has to change. The `docs/ARCHITECTURE.md` "injected dependencies"
 note explains why this is a small change rather than a rewrite.
+
+## Navigating without a keyboard
+
+Every destination in this app is a keyboard chord (`g h`, `g a`, `g r`, …), which
+a phone does not have. Before the palette existed, the only reachable flow on
+Android was the one you started in — home → album → artist — and search,
+playlists, favourites, listen later and settings were **unreachable**, including
+settings, where the offline cache and theme live.
+
+So there is one deliberately touch-shaped affordance: the **`[:]` chip in the
+status bar** (left cluster, where a narrow screen cannot clip it). Tapping it
+opens the "go to" palette (`src/lib/components/CommandPalette.svelte`) listing
+every destination as a button with a comfortable hit area. The same palette opens
+with `:` on a keyboard, and each row also has a mnemonic (`h`, `a`, `r`, `p`,
+`f`, `l`, `/`, `Q`, `?`, `s`) that matches its `g`-chord, so muscle memory
+transfers in both directions.
+
+Everything else on touch already worked: rows open their page, the album toolbar
+and the now-playing transport are buttons, and overlays close when you tap the
+backdrop.
+
+Two related details:
+
+- The hint bar is hidden on coarse pointers (`matchMedia('(pointer: coarse)')`)
+  because it names keys that do not exist there; the message line stays, since it
+  is the only place transient feedback appears. The `keyHints` setting still
+  controls it on a desktop. A Bluetooth keyboard works regardless — it just does
+  not bring the hints back.
+- The status bar drops the version and clock below 640px so the route and the
+  `[:]` chip survive its `overflow: hidden`.
+
+Not verified on hardware: whether Android's hardware **back** button walks the
+route history. The router listens for `hashchange` and mutations of it (`navigate`)
+do push history, so it should; it needs a device to confirm.

@@ -3,7 +3,7 @@
  * Nothing here is persisted — it is all reconstructible.
  */
 
-export type OverlayKind = 'help' | 'queue' | 'login' | 'actions' | 'shortcuts';
+export type OverlayKind = 'help' | 'queue' | 'login' | 'actions' | 'palette';
 
 export type ActionTargetKind = 'album' | 'artist' | 'track';
 

@@ -238,6 +238,15 @@ export function createGlobalBindings(app: App): Binding[] {
       run: () => ui.toggleOverlay('queue'),
     },
     {
+      keys: [':'],
+      scope: 'global',
+      group: GROUPS.overlays,
+      description: 'go to… (palette)',
+      hint: true,
+      run: () => ui.openOverlay('palette'),
+    },
+
+    {
       keys: ['/'],
       scope: 'global',
       group: GROUPS.overlays,

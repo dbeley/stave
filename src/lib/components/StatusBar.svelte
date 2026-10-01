@@ -39,9 +39,24 @@
 
 <header class="status">
   <span class="brand tui-upper">{APP_NAME}</span>
-  <span class="dim">v{APP_VERSION}</span>
-  <span class="sep">│</span>
+  <span class="dim narrow-hide">v{APP_VERSION}</span>
+  <span class="sep narrow-hide">│</span>
   <span class="route">{routeTitle(app.router.current)}</span>
+
+  <!--
+    Touch entry point for navigation. A phone has no keyboard and every
+    destination is a `g`-chord, so this chip is the only way to reach the other
+    sections. It sits in the left cluster so a narrow screen cannot clip it.
+  -->
+  <button
+    class="palette"
+    type="button"
+    title="go to ( : )"
+    aria-label="open the go-to palette"
+    onclick={() => app.ui.openOverlay('palette')}
+  >
+    [:]
+  </button>
 
   <span class="spacer"></span>
 
@@ -74,8 +89,8 @@
       not connected
     {/if}
   </span>
-  <span class="sep">│</span>
-  <span class="dim">{clock}</span>
+  <span class="sep narrow-hide">│</span>
+  <span class="dim narrow-hide">{clock}</span>
 </header>
 
 <style>
@@ -118,5 +133,27 @@
   }
   .pending {
     color: var(--accent);
+  }
+  .palette {
+    flex: none;
+    border: 1px solid var(--border-focus);
+    padding: 0 0.35em;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    cursor: pointer;
+  }
+  .palette:hover {
+    background: var(--accent-dim);
+    color: var(--bg);
+  }
+  /*
+    Phones: drop the least useful columns (version, clock) so the route and the
+    palette chip survive the header's `overflow: hidden`.
+  */
+  @media (max-width: 640px) {
+    .narrow-hide {
+      display: none;
+    }
   }
 </style>

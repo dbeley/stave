@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import { app } from '$lib/app.svelte';
   import ActionMenu from '$lib/components/ActionMenu.svelte';
+  import CommandPalette from '$lib/components/CommandPalette.svelte';
   import HelpOverlay from '$lib/components/HelpOverlay.svelte';
   import HintBar from '$lib/components/HintBar.svelte';
   import LoginOverlay from '$lib/components/LoginOverlay.svelte';
@@ -81,7 +82,9 @@
   <HintBar />
 </div>
 
-{#if app.ui.state.overlay === 'help'}
+{#if app.ui.state.overlay === 'palette'}
+  <CommandPalette />
+{:else if app.ui.state.overlay === 'help'}
   <HelpOverlay />
 {:else if app.ui.state.overlay === 'queue'}
   <QueueOverlay />

@@ -18,10 +18,21 @@
           ? 'ok'
           : 'dim',
   );
+
+  /*
+   * Key hints are noise on a touch device: they name keys that do not exist
+   * there. The message line stays, because in this UI it is the only place
+   * transient feedback lives. Navigation on touch goes through the status bar's
+   * `[:]` chip instead.
+   */
+  const coarsePointer =
+    typeof globalThis.matchMedia === 'function' &&
+    globalThis.matchMedia('(pointer: coarse)').matches;
+  let showHints = $derived(app.settings.state.keyHints && !coarsePointer);
 </script>
 
 <footer class="hints">
-  {#if app.settings.state.keyHints}
+  {#if showHints}
     {#each hints as binding (binding.description)}
       <span class="hint">
         <span class="key">[{formatChord(binding.keys[0] ?? '')}]</span>
