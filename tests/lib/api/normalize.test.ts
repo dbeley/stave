@@ -340,12 +340,58 @@ describe('toArtistsListing', () => {
     expect(listing.artists.map((a) => a.id)).toEqual(['1', '2']);
   });
 
-  it('returns an empty listing when there is no index', () => {
-    // NOTE: `toArtistsListing` only reads `payload.index`; there is no separate
-    // flat-artist source, so the documented "rebuild indexes when the server
-    // omits index" path (buildIndexesFrom) is unreachable — flat is always [].
+  it('returns an empty listing when the server sends no artists', () => {
     const listing = toArtistsListing({});
     expect(listing).toEqual({ ignoredArticles: '', indexes: [], artists: [] });
+  });
+
+  it('rebuilds the A-Z index when the server sends a flat artist array', () => {
+    const listing = toArtistsListing({
+      artist: [
+        { id: 'z', name: 'Zappa' },
+        { id: 'a', name: 'alpha' },
+        { id: 'b', name: 'Beta' },
+      ],
+    } as never);
+
+    // No buckets came from the server, so they are derived from the names.
+    expect(listing.indexes.map((i) => i.name)).toEqual(['A', 'B', 'Z']);
+    expect(listing.indexes[0]?.artists.map((a) => a.id)).toEqual(['a']);
+    expect(listing.artists.map((a) => a.id)).toEqual(['a', 'b', 'z']);
+  });
+
+  it('groups flat artists that share an initial letter, with # last', () => {
+    const listing = toArtistsListing({
+      artist: [
+        { id: '1', name: 'Amber' },
+        { id: '2', name: 'Aurelia' },
+        { id: '3', name: '3 Doors' },
+      ],
+    } as never);
+
+    expect(listing.indexes.map((i) => i.name)).toEqual(['A', '#']);
+    expect(listing.indexes[0]?.artists.map((a) => a.id)).toEqual(['1', '2']);
+    expect(listing.indexes[1]?.artists.map((a) => a.id)).toEqual(['3']);
+  });
+
+  it('keeps server buckets but still folds in a flat array', () => {
+    const listing = toArtistsListing({
+      index: [{ name: 'A', artist: [{ id: '1', name: 'Amber' }] }],
+      artist: [{ id: '2', name: 'Beta' }],
+    } as never);
+
+    // The server's own buckets win; the extra artist is not lost.
+    expect(listing.indexes.map((i) => i.name)).toEqual(['A']);
+    expect(listing.artists.map((a) => a.id)).toEqual(['1', '2']);
+  });
+
+  it('does not duplicate an artist present in both shapes', () => {
+    const listing = toArtistsListing({
+      index: [{ name: 'A', artist: [{ id: '1', name: 'Amber' }] }],
+      artist: [{ id: '1', name: 'Amber' }],
+    } as never);
+
+    expect(listing.artists.map((a) => a.id)).toEqual(['1']);
   });
 
   it('defaults ignoredArticles to an empty string', () => {

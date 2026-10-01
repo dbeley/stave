@@ -129,12 +129,20 @@ export function toStarred(payload: {
 /**
  * Build the browsable artist index.
  *
- * Servers may omit the index entirely (or return artists out of order), so the
- * flat list is always derived here and the indexes are rebuilt when missing.
+ * Accepts either shape a server might send: A-Z buckets (`index[]`, what
+ * Navidrome and the spec use), or a flat artist array. In both cases the flat,
+ * name-sorted list is derived here, and the buckets are rebuilt when the server
+ * did not supply them — so the UI always has something to render.
  */
 export function toArtistsListing(payload: {
   ignoredArticles?: string;
   index?: { name?: string; artist?: ArtistID3 | ArtistID3[] }[];
+  /**
+   * Some servers (and hand-written fixtures) return a flat artist array with no
+   * A-Z buckets. Accepting it is what makes the index rebuild below reachable
+   * rather than dead code.
+   */
+  artist?: ArtistID3 | ArtistID3[];
 }): ArtistsListing {
   const flat: Artist[] = [];
   const seen = new Set<string>();
@@ -148,6 +156,14 @@ export function toArtistsListing(payload: {
       flat.push(artist);
     }
     fromPayload.push({ name: index.name?.trim() || '#', artists });
+  }
+
+  // Flat form: no buckets supplied, so collect the artists and let the rebuild
+  // below produce the A-Z index.
+  for (const artist of asArray(payload.artist)) {
+    if (seen.has(artist.id)) continue;
+    seen.add(artist.id);
+    flat.push(toArtist(artist));
   }
 
   flat.sort(byArtistName);
