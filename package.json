@@ -4,7 +4,7 @@
   "packageManager": "pnpm@12.3.4",
   "version": "0.1.0",
   "type": "module",
-  "description": "A TUI-inspired Subsonic/Navidrome music client \u2014 PWA and Android app",
+  "description": "A TUI-inspired Subsonic/Navidrome music client — PWA and Android app",
   "license": "GPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
