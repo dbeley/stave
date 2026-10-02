@@ -172,6 +172,42 @@ Two related details:
 - The status bar drops the version and clock below 640px so the route and the
   `[:]` chip survive its `overflow: hidden`.
 
-Not verified on hardware: whether Android's hardware **back** button walks the
-route history. The router listens for `hashchange` and mutations of it (`navigate`)
-do push history, so it should; it needs a device to confirm.
+The hardware **back** button is wired in `src/main.ts` →
+`registerBackButton` (`src/lib/native/backButton.ts`) → `app.handleBack()`. It
+closes any open overlay first (overlays are modal), then walks the router's
+in-app history one entry at a time; when there is nothing left it returns
+`false` and the plugin lets the OS exit the app. `@capacitor/app` is imported
+lazily so the web/PWA build and the test suite never depend on the native
+runtime — there it degrades to a no-op and the PWA's own history is untouched.
+The overlay-before-history priority is unit tested in `tests/lib/app.test.ts`;
+the plugin bridge itself still wants a real device to confirm end to end.
+
+## The touch shell
+
+On a coarse pointer (`matchMedia('(pointer: coarse)')`, true on any phone or
+tablet touchscreen) the app swaps its terminal chrome for a touch shell — the
+same routes, data and keyboard bindings, but a different set of affordances.
+`CapabilityStore.shell` (`src/lib/stores/capability.svelte.ts`) is the single
+source of truth; `App.svelte` puts `data-shell="touch"` on `<html>` so CSS can
+react, and it re-reads the media query on change, so plugging a mouse into an
+Android device flips back to the terminal.
+
+- **Bottom nav.** `BottomNav.svelte` renders a home/albums/artists/now-playing
+  tab bar, generated from the same destination table as the `:` palette, so the
+  two cannot drift. The active tab follows the current route.
+- **Mini-player.** Where the desktop has the dense one-line now-playing bar,
+  touch gets `MiniPlayer.svelte`: a real image thumb, a two-line title/artist
+  and thumb-sized transport targets, plus a thin seek line. It renders only
+  while a track is loaded; its body opens the full now-playing screen.
+- **Now-playing screen.** `NowPlayingScreen.svelte` is a full-height screen with
+  a `[now playing | queue]` segmented control instead of the terminal's
+  two-column layout, so the queue is never squeezed off-screen on a phone. The
+  queue segment shows the shared `QueueList` — the same component the desktop
+  queue window uses — so queue behaviour cannot drift.
+- **Gestures.** A long-press on any list row opens its action menu (the same
+  menu the `o` key opens); a drag on the queue's `≡` handle reorders, and `✕`
+  removes. The progress bar is a slider: tapping or dragging it seeks.
+
+This is covered end to end by `e2e/mobile.spec.ts` on a Pixel 7 viewport, with a
+desktop counter-guard in the same file proving the terminal shell keeps its
+keyboard layout (no bottom nav, `g a` still reaches albums).
