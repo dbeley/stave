@@ -15,6 +15,7 @@
   import NowPlayingScreen from '$lib/components/NowPlayingScreen.svelte';
   import QueueOverlay from '$lib/components/QueueOverlay.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
+  import ToastLine from '$lib/components/ToastLine.svelte';
   import { applyShellToDocument } from '$lib/stores/capability.svelte';
   import { applyThemeToDocument } from '$lib/stores/settings.svelte';
   import AlbumPage from '$lib/pages/AlbumPage.svelte';
@@ -98,6 +99,7 @@
   <!-- Touch gets the roomy mini-player; desktop keeps the dense terminal bar.
        MiniPlayer is suppressed under the blocking login overlay, like BottomNav. -->
   {#if shell === 'touch'}
+    <ToastLine strip />
     {#if !needsLogin && app.ui.state.overlay !== 'login'}
       <MiniPlayer />
     {/if}
