@@ -99,6 +99,15 @@ the flake and the APK in step.
   download) use `<audio>`/`fetch` with **range requests**; CapacitorHttp
   replaces `window.fetch` and does not preserve that behaviour, which breaks
   seeking.
+- **Edge-to-edge / safe-area insets.** Android 15+ (the app targets SDK 36)
+  forces the WebView to draw underneath the status and navigation bars, so the
+  app's own top `StatusBar` and bottom `HintBar` were being overlapped. The core
+  `SystemBars` plugin is configured (`insetsHandling: 'css'`,
+  `initialViewportFitValueHint: 'cover'`) to feed the insets, and the two bars
+  pad themselves with `env(safe-area-inset-*)` so their background extends under
+  the system bars while their content clears them. The legacy `StatusBar`
+  plugin is kept for Android <= 14, where it can still set the bar colour; on
+  15+ the colour is ignored by the OS.
 - CORS: the browser (and the WebView) fetch the Subsonic API directly, so the
   server must allow the app's origin. Navidrome does by default; if you front it
   with a proxy, forward `Access-Control-Allow-Origin`.

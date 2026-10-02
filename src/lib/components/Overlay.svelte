@@ -54,7 +54,9 @@
     align-items: center;
     justify-content: center;
     z-index: 800;
-    padding: 1rem;
+    /* Keep a tall dialog clear of the system bars in edge-to-edge (Android). */
+    padding: calc(1rem + env(safe-area-inset-top, 0px)) calc(1rem + env(safe-area-inset-right, 0px))
+      calc(1rem + env(safe-area-inset-bottom, 0px)) calc(1rem + env(safe-area-inset-left, 0px));
     animation: tui-fade-in 0.12s ease-out;
   }
   .dialog {

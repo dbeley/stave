@@ -98,7 +98,14 @@
     display: flex;
     align-items: center;
     gap: 0.5em;
-    padding: 0.15rem 0.5rem;
+    /*
+      Android 15+ draws the app edge-to-edge, so the WebView sits under the
+      status bar. Extend the header's background behind it and pad its content
+      clear. `env()` is 0 everywhere else (desktop, PWA without a notch).
+    */
+    padding: calc(0.15rem + env(safe-area-inset-top, 0px))
+      calc(0.5rem + env(safe-area-inset-right, 0px)) 0.15rem
+      calc(0.5rem + env(safe-area-inset-left, 0px));
     border-bottom: 1px solid var(--border);
     background: var(--bg-elev);
     white-space: nowrap;

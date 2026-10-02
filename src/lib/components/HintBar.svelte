@@ -85,7 +85,12 @@
     display: flex;
     align-items: center;
     gap: 0.9em;
-    padding: 0.15rem 0.5rem;
+    /*
+      Mirror of the status bar: extend the footer under the navigation /
+      gesture bar and keep its content clear of it.
+    */
+    padding: 0.15rem calc(0.5rem + env(safe-area-inset-right, 0px))
+      calc(0.15rem + env(safe-area-inset-bottom, 0px)) calc(0.5rem + env(safe-area-inset-left, 0px));
     border-top: 1px solid var(--border);
     background: var(--bg-elev);
     white-space: nowrap;
