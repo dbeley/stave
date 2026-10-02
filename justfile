@@ -181,10 +181,13 @@ release v:
     just build
     tar -czf "stave-{{v}}-dist.tar.gz" -C dist .
     files=(stave-{{v}}-dist.tar.gz)
-    if compgen -G "android/app/build/outputs/apk/release/app-release.apk" > /dev/null; then
+    # `[ -f ]`, not `compgen -G`: compgen is a bash builtin that some builds
+    # (the Nix dev shell's bash) omit, and with `set -e` a missing builtin makes
+    # the `if` false and silently drops the APK from the release.
+    if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
       files+=(android/app/build/outputs/apk/release/app-release.apk)
       echo "including the signed release APK"
-    elif compgen -G "android/app/build/outputs/apk/release/app-release-unsigned.apk" > /dev/null; then
+    elif [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
       echo "WARNING: found only app-release-unsigned.apk — it cannot be installed," >&2
       echo "         so it is NOT being attached. Sign it (scripts/android-keystore.sh)" >&2
       echo "         and re-run, or the release will carry the web bundle only." >&2
