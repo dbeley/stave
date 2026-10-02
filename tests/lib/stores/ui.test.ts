@@ -78,4 +78,24 @@ describe('UiStore', () => {
     expect(ui.isOpen('queue')).toBe(true);
     expect(ui.state.sidebarVisible).toBe(false);
   });
+
+  it('defaults the now-playing tab to info and resets it', () => {
+    const ui = new UiStore();
+    expect(ui.state.nowPlayingTab).toBe('info');
+
+    ui.showNowPlayingTab('queue');
+    expect(ui.state.nowPlayingTab).toBe('queue');
+
+    ui.reset();
+    expect(ui.state.nowPlayingTab).toBe('info');
+  });
+
+  it('shows the requested now-playing tab', () => {
+    const ui = new UiStore();
+    ui.showNowPlayingTab('queue');
+    expect(ui.state.nowPlayingTab).toBe('queue');
+
+    ui.showNowPlayingTab('info');
+    expect(ui.state.nowPlayingTab).toBe('info');
+  });
 });

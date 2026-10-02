@@ -25,6 +25,8 @@ export interface UiState {
   sidebarVisible: boolean;
   /** Set while the command line (`:`) is capturing input. */
   commandMode: boolean;
+  /** Which segment the touch now-playing screen shows. */
+  nowPlayingTab: 'info' | 'queue';
 }
 
 export class UiStore {
@@ -36,6 +38,7 @@ export class UiStore {
       actionTarget: null,
       sidebarVisible: true,
       commandMode: false,
+      nowPlayingTab: 'info',
       ...initial,
     });
   }
@@ -75,9 +78,15 @@ export class UiStore {
     this.state.sidebarVisible = !this.state.sidebarVisible;
   }
 
+  /** Switch the touch now-playing screen between its info and queue segments. */
+  showNowPlayingTab(tab: 'info' | 'queue'): void {
+    this.state.nowPlayingTab = tab;
+  }
+
   reset(): void {
     this.state.overlay = null;
     this.state.actionTarget = null;
     this.state.commandMode = false;
+    this.state.nowPlayingTab = 'info';
   }
 }

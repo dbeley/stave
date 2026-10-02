@@ -12,6 +12,7 @@
   import LoginOverlay from '$lib/components/LoginOverlay.svelte';
   import MiniPlayer from '$lib/components/MiniPlayer.svelte';
   import NowPlayingBar from '$lib/components/NowPlayingBar.svelte';
+  import NowPlayingScreen from '$lib/components/NowPlayingScreen.svelte';
   import QueueOverlay from '$lib/components/QueueOverlay.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
   import { applyShellToDocument } from '$lib/stores/capability.svelte';
@@ -84,7 +85,11 @@
     {:else if route.name === 'search'}
       <SearchPage />
     {:else if route.name === 'now-playing'}
-      <NowPlayingPage />
+      {#if shell === 'touch'}
+        <NowPlayingScreen />
+      {:else}
+        <NowPlayingPage />
+      {/if}
     {:else if route.name === 'settings'}
       <SettingsPage />
     {/if}

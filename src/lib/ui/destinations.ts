@@ -74,14 +74,24 @@ export const DESTINATIONS: Destination[] = [
     key: 'n',
     label: 'now playing',
     hint: 'cover, metadata, queue',
-    run: () => app.router.navigate({ name: 'now-playing' }),
+    run: () => {
+      app.ui.showNowPlayingTab('info');
+      app.router.navigate({ name: 'now-playing' });
+    },
     nav: { activeOn: ['now-playing'] },
   },
   {
     key: 'Q',
     label: 'queue',
     hint: 'what plays next, reorder it',
-    run: () => app.ui.openOverlay('queue'),
+    run: () => {
+      if (app.capability.shell === 'touch') {
+        app.ui.showNowPlayingTab('queue');
+        app.router.navigate({ name: 'now-playing' });
+      } else {
+        app.ui.openOverlay('queue');
+      }
+    },
   },
   {
     key: '?',
