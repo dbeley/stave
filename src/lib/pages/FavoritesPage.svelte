@@ -33,10 +33,11 @@
   let total = $derived(
     favorites.artists.length + favorites.albums.length + favorites.tracks.length,
   );
-  let counts = $derived([favorites.artists.length, favorites.albums.length, favorites.tracks.length]);
-
-  let cursors = [artistCursor, albumCursor, trackCursor];
-  let activeCursor = $derived(cursors[focus] ?? artistCursor);
+  let counts = $derived([
+    favorites.artists.length,
+    favorites.albums.length,
+    favorites.tracks.length,
+  ]);
 
   function openArtist(artist: Artist): void {
     actions.openArtist(artist.id);

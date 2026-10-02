@@ -608,10 +608,21 @@ export class PlayerStore {
     const client = this.deps.client?.();
     const coverArt =
       track.coverArtId && client ? client.coverArtUrl(track.coverArtId, 600) : undefined;
-    this.mediaSession.update(track, { coverArt, stream: url });
-    // Metadata alone is not enough for the OS UI: without a playback state the
-    // browser shows no transport and Zen's media controls stay empty.
-    this.syncMediaSessionState();
+    /*
+     * Wrapped because this runs in the middle of loading a track: if the platform's
+     * MediaSession throws (it did — a plain metadata object is rejected by Chromium),
+     * the exception propagated out of `loadCurrent` and left the player stuck on
+     * 'loading' with nothing playing. The port is defensive too; this is the second
+     * layer, at the point where the damage would be to playback itself.
+     */
+    try {
+      this.mediaSession.update(track, { coverArt, stream: url });
+      // Metadata alone is not enough for the OS UI: without a playback state the
+      // browser shows no transport and Zen's media controls stay empty.
+      this.syncMediaSessionState();
+    } catch {
+      /* never let the media session break playback */
+    }
   }
 
   private syncPositionState(): void {

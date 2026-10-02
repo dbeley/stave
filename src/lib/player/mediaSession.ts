@@ -39,26 +39,48 @@ export class BrowserMediaSession implements MediaSessionPort {
 
   update(track: Track | undefined, urls: { coverArt?: string; stream?: string }): void {
     if (!this.session) return;
-    if (!track) {
-      this.session.metadata = null;
-      return;
+    /*
+     * Everything here is best-effort: the OS media controls are a nicety and must
+     * never be able to break playback. `MediaSession.metadata` is strictly typed in
+     * Chromium — assigning a plain object throws "The provided value is not of type
+     * 'MediaMetadata'", and because the player sets metadata as part of loading a
+     * track, that exception aborted the load and left playback stuck. So: build a
+     * real MediaMetadata where the constructor exists, and swallow any failure.
+     */
+    try {
+      if (!track) {
+        this.session.metadata = null;
+        return;
+      }
+      const artwork: { src: string; sizes?: string }[] = [];
+      if (urls.coverArt) {
+        artwork.push({ src: urls.coverArt, sizes: '600x600' });
+      }
+      const metadata: MediaMetadataLike = {
+        title: track.title,
+        artist: track.artistName ?? '',
+        album: track.albumName ?? '',
+        artwork,
+      };
+      const MediaMetadataCtor = (globalThis as { MediaMetadata?: typeof MediaMetadata })
+        .MediaMetadata;
+      this.session.metadata =
+        typeof MediaMetadataCtor === 'function'
+          ? new MediaMetadataCtor(metadata as MediaMetadataInit)
+          : (metadata as unknown as MediaMetadata);
+    } catch {
+      // A MediaSession that refuses our metadata costs the lock-screen artwork;
+      // it must not cost the music.
     }
-    const artwork: { src: string; sizes?: string }[] = [];
-    if (urls.coverArt) {
-      artwork.push({ src: urls.coverArt, sizes: '600x600' });
-    }
-    const metadata: MediaMetadataLike = {
-      title: track.title,
-      artist: track.artistName ?? '',
-      album: track.albumName ?? '',
-      artwork,
-    };
-    this.session.metadata = metadata as unknown as MediaMetadata;
   }
 
   setPlaybackState(state: 'playing' | 'paused' | 'none'): void {
     if (!this.session) return;
-    this.session.playbackState = state;
+    try {
+      this.session.playbackState = state;
+    } catch {
+      /* best-effort, as above */
+    }
   }
 
   setPosition(duration: number, position: number, rate: number): void {

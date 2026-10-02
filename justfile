@@ -157,12 +157,23 @@ bump v:
 # installed at all ("Missing META-INF/MANIFEST.MF"), so it is never published.
 # Build it first with `just android-release` (see scripts/android-keystore.sh for
 # the signing key), otherwise the release carries the web bundle alone.
+#
+# Only the files the bump actually touches are staged, never `git add -A`: that
+# swept a local .direnv cache (2300 lines of absolute /nix/store paths) into a
+# release commit, and the same mistake once committed the whole generated android/
+# platform. A release commit should contain the version bump, nothing else.
 release v:
     #!/usr/bin/env bash
     set -euo pipefail
     just bump {{v}}
     just verify
-    git add -A
+    git add package.json android/variables.gradle flake.nix 2>/dev/null || true
+    # `bump` may touch other tracked files; stage exactly what it changed.
+    git diff --name-only --diff-filter=M -z | xargs -0 -r git add --
+    if git diff --cached --quiet; then
+      echo "nothing to commit — is the version already {{v}}?" >&2
+      exit 1
+    fi
     git commit -m "chore(release): v{{v}}"
     git tag -a "v{{v}}" -m "stave v{{v}}"
     git push origin HEAD

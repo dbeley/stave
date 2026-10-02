@@ -100,8 +100,7 @@
     read();
     element.addEventListener('scroll', read, { passive: true });
     // A resize can change how many rows fit; re-read rather than guess.
-    const observer =
-      typeof ResizeObserver === 'function' ? new ResizeObserver(read) : undefined;
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(read) : undefined;
     observer?.observe(element);
     return () => {
       element.removeEventListener('scroll', read);
