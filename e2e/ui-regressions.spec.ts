@@ -120,3 +120,53 @@ test.describe('panel header', () => {
     expect(await gap()).toBeGreaterThanOrEqual(0);
   });
 });
+
+/**
+ * The connect popup keeps a highlight cursor. These pin the invariant that made
+ * it misbehave: the highlight and the *focus* must be the same thing, because the
+ * focus is what decides where your typing goes.
+ */
+test.describe('connect popup', () => {
+  test('tab moves the focus, so typing lands where the highlight points', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('dialog', { name: 'connect' })).toBeVisible();
+
+    const form = page.locator('.form');
+    const server = form.locator('input[type="url"]');
+    await server.fill('http://127.0.0.1:4534');
+
+    await page.keyboard.press('Tab');
+
+    // The next field really has the focus on it…
+    await expect(form.locator('input[type="text"]')).toBeFocused();
+    // …and the highlight agrees with the focus rather than drifting ahead of it.
+    await expect(form.locator('.row.active .label')).toHaveText('username');
+
+    // Typing used to append to the server URL while "username" was highlighted.
+    await page.keyboard.type('dave');
+    await expect(form.locator('input[type="text"]')).toHaveValue('dave');
+    await expect(server).toHaveValue('http://127.0.0.1:4534');
+  });
+
+  test('moving onto a field never changes its value', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('dialog', { name: 'connect' })).toBeVisible();
+
+    const form = page.locator('.form');
+    const remember = form.locator('input[type="checkbox"]');
+    await form.locator('input[type="url"]').click();
+
+    // Tabbing onto the checkbox must not tick it (it used to).
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+
+    await expect(remember).toBeFocused();
+    await expect(form.locator('.row.active .label')).toHaveText('remember');
+    await expect(remember).not.toBeChecked();
+
+    // …while space still toggles it, which is what a checkbox should do.
+    await page.keyboard.press('Space');
+    await expect(remember).toBeChecked();
+  });
+});

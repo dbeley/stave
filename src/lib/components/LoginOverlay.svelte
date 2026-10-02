@@ -1,9 +1,14 @@
 <!--
   The login / connection form.
- *
- * Shown as a blocking overlay until credentials are known, and re-openable from
- * the settings page. The password is only persisted when "remember" is ticked;
- * it is never sent anywhere except the Subsonic token flow.
+
+  Shown as a blocking overlay until credentials are known, and re-openable from
+  the settings page. The password is only persisted when "remember" is ticked;
+  it is never sent anywhere except the Subsonic token flow.
+
+  Focus and the highlight are the *same thing*: the browser owns Tab, and the
+  `onfocus` handlers move the highlight to match. An earlier version kept its own
+  cursor and intercepted Tab, which let the two drift apart — the next row looked
+  selected while the caret (and therefore your typing) stayed on the previous one.
 -->
 <script lang="ts">
   import { app } from '$lib/app.svelte';
@@ -17,15 +22,25 @@
 
   let { blocking = false }: Props = $props();
 
+  type Field = 'server' | 'username' | 'password' | 'remember';
+
   let server = $state(app.credentials.state.server || DEFAULT_SERVER_URL);
   let username = $state(app.credentials.state.username);
   let password = $state(app.credentials.state.password);
   let remember = $state(app.credentials.state.remembered);
   let busy = $state(false);
   let error = $state<string | undefined>(undefined);
-  let field = $state<'server' | 'username' | 'password' | 'remember'>('server');
+  let field = $state<Field>('server');
 
-  let fields = ['server', 'username', 'password', 'remember'] as const;
+  const fields: Field[] = ['server', 'username', 'password', 'remember'];
+
+  /** The real nodes, so the cursor can move focus rather than only a highlight. */
+  const inputs: Record<Field, HTMLInputElement | undefined> = {
+    server: undefined,
+    username: undefined,
+    password: undefined,
+    remember: undefined,
+  };
 
   async function submit(): Promise<void> {
     if (busy) return;
@@ -45,11 +60,16 @@
     }
   }
 
+  /** Move highlight and focus together — never one without the other. */
+  function focusField(next: Field): void {
+    field = next;
+    inputs[next]?.focus();
+  }
+
   function move(delta: number): void {
     const index = fields.indexOf(field);
     const next = Math.min(Math.max(index + delta, 0), fields.length - 1);
-    field = fields[next] ?? 'server';
-    if (field === 'remember') remember = !remember;
+    focusField(fields[next] ?? 'server');
   }
 
   function onKeydown(event: KeyboardEvent): void {
@@ -61,14 +81,20 @@
         return;
       }
       void submit();
+      return;
     }
-    if (event.key === 'Tab' || (event.key === 'j' && event.altKey)) {
+    /*
+     * Tab is deliberately left alone: the browser's own order moves the focus and
+     * the `onfocus` handlers keep the highlight in step. Intercepting it here is
+     * what used to leave the caret behind on the previous field, so the next row
+     * looked selected and your typing went elsewhere.
+     *
+     * Space is left alone too: it types a space in a field and toggles the checkbox
+     * natively, both of which are what a user expects.
+     */
+    if (event.altKey && (event.key === 'j' || event.key === 'k')) {
       event.preventDefault();
-      move(event.shiftKey ? -1 : 1);
-    }
-    if (event.key === ' ') {
-      event.preventDefault();
-      if (field === 'remember') remember = !remember;
+      move(event.key === 'j' ? 1 : -1);
     }
     if (event.key === 'Escape' && !blocking) {
       event.preventDefault();
@@ -91,6 +117,7 @@
         class="input"
         type="url"
         placeholder="http://localhost:4533"
+        bind:this={inputs.server}
         bind:value={server}
         onfocus={() => (field = 'server')}
       />
@@ -102,6 +129,7 @@
         class="input"
         type="text"
         autocomplete="username"
+        bind:this={inputs.username}
         bind:value={username}
         onfocus={() => (field = 'username')}
       />
@@ -113,6 +141,7 @@
         class="input"
         type="password"
         autocomplete="current-password"
+        bind:this={inputs.password}
         bind:value={password}
         onfocus={() => (field = 'password')}
       />
@@ -123,6 +152,7 @@
       <input
         class="checkbox"
         type="checkbox"
+        bind:this={inputs.remember}
         bind:checked={remember}
         onfocus={() => (field = 'remember')}
       />
@@ -134,7 +164,7 @@
     {/if}
 
     <p class="hint">
-      tab / j k move · enter connect · {blocking
+      tab / shift+tab move · enter connect · {blocking
         ? 'connection required to continue'
         : 'esc cancels'}
     </p>
