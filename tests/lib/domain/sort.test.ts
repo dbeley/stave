@@ -26,12 +26,22 @@ describe('SORT_OPTIONS', () => {
     const paginated = Object.fromEntries(SORT_OPTIONS.map((o) => [o.id, o.paginated]));
     expect(paginated).toEqual({
       newest: true,
+      // The one sort that genuinely cannot paginate: the server reshuffles, so
+      // page 2 would repeat and skip rows from page 1.
       random: false,
-      recent: false,
-      frequent: false,
+      // Ordered server-side, so offset pages are stable — these were marked
+      // unpaginated by mistake, which is why "most played" and "recently played"
+      // stopped after a single page.
+      recent: true,
+      frequent: true,
       alphabeticalByName: true,
       alphabeticalByArtist: true,
     });
+  });
+
+  it('paginates every sort except random', () => {
+    const unpaginated = SORT_OPTIONS.filter((o) => !o.paginated).map((o) => o.id);
+    expect(unpaginated).toEqual(['random']);
   });
 
   it('gives every option a label and a unique single-character hint', () => {

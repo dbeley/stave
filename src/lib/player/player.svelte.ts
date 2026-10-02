@@ -251,6 +251,7 @@ export class PlayerStore {
     this.audio.pause();
     this.state.status = 'paused';
     this.mediaSession.setPlaybackState('paused');
+    this.syncMediaSessionState();
   }
 
   async toggle(): Promise<void> {
@@ -322,9 +323,21 @@ export class PlayerStore {
     await this.loadCurrent(true);
   }
 
+  /**
+   * Seek within the current track.
+   *
+   * Guarded on there being a track: without this, `l`/`h` moved `state.position`
+   * on an idle player (0 → 5 → 10 …) and the bar rendered that phantom time as
+   * "0:05/--:--". A seek with nothing loaded is not a no-op the user cannot see —
+   * it is text on screen, so it has to be refused rather than clamped.
+   */
   seek(seconds: number): void {
+    if (!this.state.track) return;
     const duration = this.state.duration || this.audio.duration || 0;
-    const target = Math.min(Math.max(seconds, 0), duration > 0 ? duration : seconds);
+    // No known duration yet: nothing to clamp a target against, so leave the
+    // position alone rather than writing a value the bar would then display.
+    if (duration <= 0) return;
+    const target = Math.min(Math.max(seconds, 0), duration);
     if (Number.isFinite(target)) this.audio.currentTime = target;
     this.state.position = target;
     this.syncPositionState();
@@ -372,6 +385,7 @@ export class PlayerStore {
     if (!track) {
       this.state.track = undefined;
       this.state.status = 'idle';
+      this.syncMediaSessionState();
       return;
     }
 
@@ -451,6 +465,7 @@ export class PlayerStore {
       this.audio.on('playing', () => {
         this.consecutiveErrors = 0;
         this.state.status = 'playing';
+        this.syncMediaSessionState();
       }),
       this.audio.on('pause', () => {
         if (this.state.status === 'playing') this.state.status = 'paused';
@@ -594,10 +609,36 @@ export class PlayerStore {
     const coverArt =
       track.coverArtId && client ? client.coverArtUrl(track.coverArtId, 600) : undefined;
     this.mediaSession.update(track, { coverArt, stream: url });
+    // Metadata alone is not enough for the OS UI: without a playback state the
+    // browser shows no transport and Zen's media controls stay empty.
+    this.syncMediaSessionState();
   }
 
   private syncPositionState(): void {
     this.mediaSession.setPosition(this.state.duration, this.state.position, 1);
+  }
+
+  /**
+   * MediaSession needs to know whether we are playing, and the player never told
+   * it: setting only the metadata left the OS with a track, no transport state and
+   * a stale play/pause button. `none` when nothing is loaded, so the session
+   * disappears from the OS UI rather than lingering after playback stops.
+   */
+  private syncMediaSessionState(): void {
+    if (!this.state.track) {
+      this.mediaSession.setPlaybackState('none');
+      return;
+    }
+    if (this.state.status === 'playing') {
+      this.mediaSession.setPlaybackState('playing');
+      return;
+    }
+    if (this.state.status === 'loading') {
+      // Still buffering: report "playing" so the OS control reads as active.
+      this.mediaSession.setPlaybackState('playing');
+      return;
+    }
+    this.mediaSession.setPlaybackState('paused');
   }
 
   private bindMediaSession(): void {

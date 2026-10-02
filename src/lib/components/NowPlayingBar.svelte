@@ -78,10 +78,17 @@
     <span class="badge" title="streaming from the server">≈ stream</span>
   {/if}
 
-  <span class="position">
-    {formatDuration(position)}/{formatDuration(duration)}
-  </span>
-  <Meter value={player.progress} width={16} />
+  <!--
+    Only once something is loaded: with an empty player the position/duration pair
+    rendered "0:00/--:--", a phantom time for a track that does not exist. The
+    transport controls stay visible so the bar keeps its shape.
+  -->
+  {#if track}
+    <span class="position">
+      {formatDuration(position)}/{formatDuration(duration)}
+    </span>
+    <Meter value={player.progress} width={16} />
+  {/if}
   <span class="dim vol">{volumeBar}</span>
 </div>
 

@@ -1,11 +1,10 @@
 <!--
   Favorites: everything the server reports as starred.
- *
- * Artists, albums and tracks share one flat, navigable list. Headings are
- * section markers the cursor skips, exactly like the search results, and each
- * row's keys follow the shared item contract: enter opens or plays, a appends,
- * n plays next, f unfavourites, o opens the action menu and L marks listen
- * later.
+
+  Three sections, one per entity kind, switched with tab/shift+tab exactly like
+  the artist page's panes. Being separate panes rather than one flat list means
+  each keeps its own cursor, so `j`/`k` never walk you across a section boundary
+  into a different kind of row — and the counts stay visible in the heading bar.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
@@ -18,96 +17,48 @@
   import TrackRow from '$lib/components/TrackRow.svelte';
   import type { Album, Artist, Track } from '$lib/domain/types';
   import { ListCursor, listNavigationBindings } from '$lib/keyboard/list.svelte';
+  import type { Binding } from '$lib/keyboard/registry.svelte';
   import { actions } from '$lib/ui/actionsRegistry.svelte';
 
-  type Row =
-    | { kind: 'heading'; label: string; count: number }
-    | { kind: 'none'; label: string; message: string }
-    | { kind: 'artist'; artist: Artist }
-    | { kind: 'album'; album: Album }
-    | { kind: 'track'; track: Track; index: number };
+  /** 0 artists · 1 albums · 2 tracks — the order the sections are shown in. */
+  const PANES = 3;
+  const LABELS = ['artists', 'albums', 'tracks'] as const;
 
-  let cursor = new ListCursor();
+  let focus = $state(0);
+  let artistCursor = new ListCursor();
+  let albumCursor = new ListCursor();
+  let trackCursor = new ListCursor();
 
   let favorites = $derived(app.favorites.state);
   let total = $derived(
     favorites.artists.length + favorites.albums.length + favorites.tracks.length,
   );
+  let counts = $derived([favorites.artists.length, favorites.albums.length, favorites.tracks.length]);
 
-  let rows = $derived<Row[]>(buildRows());
+  let cursors = [artistCursor, albumCursor, trackCursor];
+  let activeCursor = $derived(cursors[focus] ?? artistCursor);
 
-  function buildRows(): Row[] {
-    const state = app.favorites.state;
-    const out: Row[] = [];
-
-    out.push({ kind: 'heading', label: 'artists', count: state.artists.length });
-    if (state.artists.length === 0) {
-      out.push({ kind: 'none', label: 'artists', message: 'no starred artists' });
-    } else {
-      for (const artist of state.artists) out.push({ kind: 'artist', artist });
-    }
-
-    out.push({ kind: 'heading', label: 'albums', count: state.albums.length });
-    if (state.albums.length === 0) {
-      out.push({ kind: 'none', label: 'albums', message: 'no starred albums' });
-    } else {
-      for (const album of state.albums) out.push({ kind: 'album', album });
-    }
-
-    out.push({ kind: 'heading', label: 'tracks', count: state.tracks.length });
-    if (state.tracks.length === 0) {
-      out.push({ kind: 'none', label: 'tracks', message: 'no starred tracks' });
-    } else {
-      state.tracks.forEach((track, index) => out.push({ kind: 'track', track, index }));
-    }
-
-    return out;
+  function openArtist(artist: Artist): void {
+    actions.openArtist(artist.id);
   }
 
-  /** Rows the cursor can land on: headings and inline notes are skipped. */
-  function selectableIndices(): number[] {
-    return rows
-      .map((row, index) => (row.kind === 'heading' || row.kind === 'none' ? -1 : index))
-      .filter((index) => index >= 0);
+  function openAlbum(album: Album): void {
+    actions.openAlbum(album.id);
   }
 
-  function selectedRow(): Row | undefined {
-    const row = rows[cursor.index];
-    return row && row.kind !== 'heading' && row.kind !== 'none' ? row : undefined;
+  /**
+   * Only the focused pane's bindings are live, so keys never cross sections.
+   *
+   * The parameter is generic and returns the same element type: widening to
+   * `Binding[]` would erase the item type `listNavigationBindings` carries for
+   * `onActivate`, which is what produced "implicitly has an 'any' type" errors.
+   */
+  function guarded<B extends Binding>(bindings: B[], pane: number): B[] {
+    return bindings.map((binding) => ({ ...binding, when: () => focus === pane }));
   }
 
-  function activate(row: Row | undefined = selectedRow()): void {
-    if (!row) return;
-    if (row.kind === 'artist') actions.openArtist(row.artist.id);
-    else if (row.kind === 'album') actions.openAlbum(row.album.id);
-    else if (row.kind === 'track') void actions.playTrackNow(row.track);
-  }
-
-  function queueRow(mode: 'end' | 'next', row: Row | undefined = selectedRow()): void {
-    if (!row) return;
-    if (row.kind === 'album') void actions.enqueueAlbum(row.album, mode);
-    else if (row.kind === 'track') actions.enqueueTrack(row.track, mode);
-  }
-
-  function unfavouriteRow(row: Row | undefined = selectedRow()): void {
-    if (!row) return;
-    if (row.kind === 'artist') void actions.toggleArtistFavorite(row.artist);
-    else if (row.kind === 'album') void actions.toggleAlbumFavorite(row.album);
-    else if (row.kind === 'track') void actions.toggleTrackFavorite(row.track);
-  }
-
-  function listenLaterRow(row: Row | undefined = selectedRow()): void {
-    if (!row) return;
-    if (row.kind === 'album') actions.toggleListenLater(row.album);
-    else if (row.kind === 'track') void actions.toggleListenLaterForTrack(row.track);
-    else app.toasts.warn('listen later only applies to albums');
-  }
-
-  function openActions(row: Row | undefined = selectedRow()): void {
-    if (!row) return;
-    if (row.kind === 'album') actions.openAlbumActions(row.album);
-    else if (row.kind === 'track') actions.openTrackActions(row.track);
-    else if (row.kind === 'artist') actions.openArtistActions(row.artist);
+  function queueAlbum(mode: 'end' | 'next', album: Album): void {
+    void actions.enqueueAlbum(album, mode);
   }
 
   // Starred entities are cheap to re-fetch and de-duplicated by the store.
@@ -115,53 +66,183 @@
     void app.favorites.load();
   });
 
-  // Never leave the cursor on a heading or an inline empty note.
-  $effect(() => {
-    const selectable = selectableIndices();
-    if (selectable.length === 0) return;
-    if (!selectable.includes(cursor.index)) {
-      const next = selectable.find((index) => index > cursor.index) ?? selectable[0]!;
-      cursor.set(next);
-    }
-  });
-
   onMount(() =>
     app.keyboard.registerAll([
-      ...listNavigationBindings(cursor, { hint: true, onActivate: () => activate() }),
+      // ---- artists (pane 0) ----
+      ...guarded(
+        [
+          ...listNavigationBindings(artistCursor, {
+            hint: true,
+            onActivate: (artist: Artist) => openArtist(artist),
+          }),
+          {
+            keys: ['f'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'unfavourite',
+            run: () => {
+              const artist = artistCursor.selected(favorites.artists);
+              if (artist) void actions.toggleArtistFavorite(artist);
+            },
+          },
+          {
+            keys: ['o'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'actions',
+            run: () => {
+              const artist = artistCursor.selected(favorites.artists);
+              if (artist) actions.openArtistActions(artist);
+            },
+          },
+        ],
+        0,
+      ),
+      // ---- albums (pane 1) ----
+      ...guarded(
+        [
+          ...listNavigationBindings(albumCursor, {
+            hint: true,
+            onActivate: (album: Album) => openAlbum(album),
+          }),
+          {
+            keys: ['n'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'play next',
+            run: () => {
+              const album = albumCursor.selected(favorites.albums);
+              if (album) queueAlbum('next', album);
+            },
+          },
+          {
+            keys: ['a'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'add to queue',
+            run: () => {
+              const album = albumCursor.selected(favorites.albums);
+              if (album) queueAlbum('end', album);
+            },
+          },
+          {
+            keys: ['f'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'unfavourite',
+            run: () => {
+              const album = albumCursor.selected(favorites.albums);
+              if (album) void actions.toggleAlbumFavorite(album);
+            },
+          },
+          {
+            keys: ['L'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'listen later',
+            run: () => {
+              const album = albumCursor.selected(favorites.albums);
+              if (album) actions.toggleListenLater(album);
+            },
+          },
+          {
+            keys: ['o'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'actions',
+            run: () => {
+              const album = albumCursor.selected(favorites.albums);
+              if (album) actions.openAlbumActions(album);
+            },
+          },
+        ],
+        1,
+      ),
+      // ---- tracks (pane 2) ----
+      ...guarded(
+        [
+          ...listNavigationBindings(trackCursor, {
+            hint: true,
+            onActivate: (track: Track, index: number) => {
+              void actions.playTrackNow(track, {
+                tracks: favorites.tracks,
+                index,
+                label: 'favourites',
+              });
+            },
+          }),
+          {
+            keys: ['n'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'play next',
+            run: () => {
+              const track = trackCursor.selected(favorites.tracks);
+              if (track) actions.enqueueTrack(track, 'next');
+            },
+          },
+          {
+            keys: ['a'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'add to queue',
+            run: () => {
+              const track = trackCursor.selected(favorites.tracks);
+              if (track) actions.enqueueTrack(track, 'end');
+            },
+          },
+          {
+            keys: ['f'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'unfavourite',
+            run: () => {
+              const track = trackCursor.selected(favorites.tracks);
+              if (track) void actions.toggleTrackFavorite(track);
+            },
+          },
+          {
+            keys: ['L'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'listen later',
+            run: () => {
+              const track = trackCursor.selected(favorites.tracks);
+              if (track) void actions.toggleListenLaterForTrack(track);
+            },
+          },
+          {
+            keys: ['o'],
+            scope: 'page',
+            group: 'favorites',
+            description: 'actions',
+            run: () => {
+              const track = trackCursor.selected(favorites.tracks);
+              if (track) actions.openTrackActions(track);
+            },
+          },
+        ],
+        2,
+      ),
+      // ---- pane switching ----
       {
-        keys: ['n'],
+        keys: ['tab'],
         scope: 'page',
-        group: 'favorites',
-        description: 'play next',
-        run: () => queueRow('next'),
+        group: 'navigation',
+        description: 'next section',
+        hint: true,
+        run: () => {
+          focus = (focus + 1) % PANES;
+        },
       },
       {
-        keys: ['a'],
+        keys: ['shift+tab'],
         scope: 'page',
-        group: 'favorites',
-        description: 'add to queue',
-        run: () => queueRow('end'),
-      },
-      {
-        keys: ['f'],
-        scope: 'page',
-        group: 'favorites',
-        description: 'unfavourite',
-        run: () => unfavouriteRow(),
-      },
-      {
-        keys: ['o'],
-        scope: 'page',
-        group: 'favorites',
-        description: 'actions',
-        run: () => openActions(),
-      },
-      {
-        keys: ['L'],
-        scope: 'page',
-        group: 'favorites',
-        description: 'listen later',
-        run: () => listenLaterRow(),
+        group: 'navigation',
+        description: 'previous section',
+        run: () => {
+          focus = (focus + PANES - 1) % PANES;
+        },
       },
     ]),
   );
@@ -191,41 +272,85 @@
         hint="stars live on the server; this list mirrors them"
       />
     {:else}
-      <ListView
-        items={rows}
-        {cursor}
-        keyOf={(row, index) =>
-          row.kind === 'heading'
-            ? `heading-${row.label}`
-            : row.kind === 'none'
-              ? `none-${row.label}`
-              : row.kind === 'artist'
-                ? row.artist.id
-                : row.kind === 'album'
-                  ? row.album.id
-                  : `${row.track.id}-${index}`}
-        ariaLabel="favorites"
-        onActivate={(row) => activate(row)}
-      >
-        {#snippet row(entry, index)}
-          {#if entry.kind === 'heading'}
-            <span class="heading tui-upper">── {entry.label} ({entry.count})</span>
-          {:else if entry.kind === 'none'}
-            <span class="empty-note">└─ {entry.message}</span>
-          {:else if entry.kind === 'artist'}
-            <ArtistRow artist={entry.artist} />
-          {:else if entry.kind === 'album'}
-            <AlbumRow album={entry.album} />
-          {:else}
+      <!--
+        The section bar doubles as the tab strip: counts on every section, so you
+        can see what is where without visiting each one.
+      -->
+      <div class="tabs" role="tablist" aria-label="favourite sections">
+        {#each LABELS as label, index (label)}
+          <button
+            type="button"
+            class="tab"
+            class:active={focus === index}
+            role="tab"
+            aria-selected={focus === index}
+            onclick={() => (focus = index)}
+            data-pane={index}
+          >
+            {label} <span class="count">{counts[index]}</span>
+          </button>
+        {/each}
+        <span class="spacer"></span>
+        <span class="tip dim">tab switches section</span>
+      </div>
+
+      {#if focus === 0}
+        {#if favorites.artists.length === 0}
+          <p class="empty-note">└─ no starred artists</p>
+        {:else}
+          <ListView
+            items={favorites.artists}
+            cursor={artistCursor}
+            keyOf={(artist) => artist.id}
+            ariaLabel="favourite artists"
+            onActivate={(artist) => openArtist(artist)}
+          >
+            {#snippet row(artist)}
+              <ArtistRow {artist} />
+            {/snippet}
+          </ListView>
+        {/if}
+      {:else if focus === 1}
+        {#if favorites.albums.length === 0}
+          <p class="empty-note">└─ no starred albums</p>
+        {:else}
+          <ListView
+            items={favorites.albums}
+            cursor={albumCursor}
+            keyOf={(album) => album.id}
+            ariaLabel="favourite albums"
+            onActivate={(album) => openAlbum(album)}
+          >
+            {#snippet row(album)}
+              <AlbumRow {album} />
+            {/snippet}
+          </ListView>
+        {/if}
+      {:else if favorites.tracks.length === 0}
+        <p class="empty-note">└─ no starred tracks</p>
+      {:else}
+        <ListView
+          items={favorites.tracks}
+          cursor={trackCursor}
+          keyOf={(track, index) => `${track.id}-${index}`}
+          ariaLabel="favourite tracks"
+          onActivate={(track, index) =>
+            void actions.playTrackNow(track, {
+              tracks: favorites.tracks,
+              index,
+              label: 'favourites',
+            })}
+        >
+          {#snippet row(track, index)}
             <TrackRow
-              track={entry.track}
+              {track}
               {index}
               showAlbum={true}
               technical={app.settings.state.showTechnicalColumns}
             />
-          {/if}
-        {/snippet}
-      </ListView>
+          {/snippet}
+        </ListView>
+      {/if}
     {/if}
   </Panel>
 </main>
@@ -239,8 +364,45 @@
     padding: 0.55rem;
     gap: 0.5rem;
   }
-  .heading {
+  .tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.25rem;
+  }
+  .tab {
+    background: none;
+    border: none;
+    border-left: 2px solid transparent;
+    padding: 0.1rem 0.5rem;
+    font: inherit;
+    color: var(--fg-dim);
+    cursor: pointer;
+  }
+  .tab.active {
     color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--bg-elev-2);
+  }
+  .count {
+    color: var(--fg-faint);
+  }
+  .tab.active .count {
+    color: var(--accent-dim);
+  }
+  .spacer {
+    flex: 1;
+  }
+  .tip {
+    font-size: 0.9em;
+  }
+  /* Key hints are noise where the keys do not exist. */
+  @media (pointer: coarse) {
+    .tip {
+      display: none;
+    }
   }
   .empty-note {
     color: var(--fg-faint);

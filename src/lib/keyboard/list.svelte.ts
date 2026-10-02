@@ -87,8 +87,16 @@ export class ListCursor {
 }
 
 export interface ListBindingOptions {
-  /** Enter — the primary action (open a page, play a track). */
-  onActivate?: () => void;
+  /**
+   * Enter — the primary action (open a page, play a track).
+   *
+   * Declared with optional arguments so a caller that *has* the item and wants it
+   * (`onActivate: (album) => open(album)`) type-checks as well as one that only
+   * reads the cursor (`onActivate: () => open()`). Without the parameters a typed
+   * callback is rejected: "Type '(album: Album) => void' is not assignable to
+   * type '() => void'".
+   */
+  onActivate?: (item: never, index: number) => void;
   /** `o` — the secondary action (usually the action menu). */
   onOpen?: () => void;
   scope?: Scope;
@@ -201,7 +209,7 @@ export function listNavigationBindings(
       group,
       description: 'open / play',
       hint: options.hint ?? true,
-      run: options.onActivate,
+      run: () => options.onActivate?.(undefined as never, cursor.index),
     });
   }
   if (options.onOpen) {

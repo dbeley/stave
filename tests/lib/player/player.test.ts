@@ -292,11 +292,29 @@ describe('seeking', () => {
     expect(player.state.position).toBe(200);
   });
 
-  it('uses the audio duration when the track one is unknown', () => {
+  it('uses the audio duration when the track one is unknown', async () => {
+    // Loads a track first: seeking on an idle player is refused (it used to move
+    // `position` with nothing loaded, which showed up as a phantom time in the
+    // bar). What is under test here is only the duration *fallback*.
     const { player, audio } = makePlayer();
+    await player.playTracks([track('a')]);
+    player.state.duration = 0;
     audio.duration = 50;
     player.seek(999);
     expect(player.state.position).toBe(50);
+  });
+
+  it('refuses to seek when there is nothing playing', () => {
+    const { player, audio } = makePlayer();
+    audio.duration = 50;
+
+    // The bug: `l`/`h` walked `position` forward on an idle player (0 → 5 → 10 …)
+    // and the bar rendered it as "0:05/--:--".
+    player.seekBy(5);
+    player.seekBy(5);
+    expect(player.state.position).toBe(0);
+    player.seek(30);
+    expect(player.state.position).toBe(0);
   });
 
   it('seekFraction() maps a fraction of the duration and is a no-op without one', async () => {

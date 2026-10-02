@@ -5,6 +5,11 @@
  * that into one navigable list — a heading row per letter, then its artists —
  * and skips the headings when moving the cursor (same trick as SearchPage).
  * Typing a letter jumps straight to that bucket.
+ *
+ * The list is virtualised: a real library can hold thousands of artists, and
+ * rendering every row costs seconds of paint and makes each cursor move re-render
+ * the lot. Only the rows near the viewport are built; the A-Z index still jumps,
+ * because the cursor moves and the window follows it.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
@@ -157,6 +162,7 @@
           row.kind === 'heading' ? `heading-${row.label}` : `artist-${row.artist.id}`}
         ariaLabel="artists"
         onActivate={() => openSelected()}
+        virtualise={true}
       >
         {#snippet row(entry)}
           {#if entry.kind === 'heading'}

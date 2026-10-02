@@ -33,6 +33,20 @@
     void app.library.loadAlbumList(RECENT);
   });
 
+  /**
+   * Load the next page as the cursor approaches the end of the focused pane.
+   * `newest` paginates, `random` deliberately does not (its pages would reshuffle
+   * and repeat), so this only ever fires for the recently-added pane.
+   */
+  $effect(() => {
+    const sort = focus === 0 ? RANDOM : RECENT;
+    const slice = focus === 0 ? randomSlice : recentSlice;
+    const cursor = focus === 0 ? randomCursor : recentCursor;
+    if (cursor.index >= slice.items.length - 2) {
+      void app.library.loadMoreAlbums(sort);
+    }
+  });
+
   onMount(() =>
     app.keyboard.registerAll([
       {
@@ -145,6 +159,9 @@
           <AlbumRow {album} />
         {/snippet}
       </ListView>
+      {#if recentSlice.hasMore && !recentSlice.loading}
+        <p class="more">… more below (move past the end to load)</p>
+      {/if}
     {/if}
   </Panel>
 </main>
@@ -162,5 +179,10 @@
     .page {
       grid-template-columns: 1fr;
     }
+  }
+  .more {
+    margin: 0.3rem 0 0;
+    color: var(--fg-faint);
+    font-size: 0.9em;
   }
 </style>

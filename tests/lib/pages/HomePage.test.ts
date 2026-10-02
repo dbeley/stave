@@ -57,6 +57,9 @@ function makeApp(random: unknown, recent: unknown): Record<string, any> {
     library: {
       list: vi.fn((sort: string) => (sort === 'random' ? random : recent)),
       loadAlbumList: vi.fn().mockResolvedValue(undefined),
+      // The recently-added pane paginates, so the page calls this as the cursor
+      // nears the end of the list.
+      loadMoreAlbums: vi.fn().mockResolvedValue(undefined),
     },
     favorites: { isAlbumStarred: () => false },
     listenLater: { has: () => false },

@@ -19,7 +19,7 @@ import { DownloadManager } from '$lib/offline/downloads.svelte';
 import { OfflineResolver } from '$lib/offline/resolve';
 import type { BlobStore } from '$lib/offline/blobStore';
 import { PlayerStore, type AudioPort } from '$lib/player/player.svelte';
-import type { MediaSessionPort } from '$lib/player/mediaSession';
+import { BrowserMediaSession, type MediaSessionPort } from '$lib/player/mediaSession';
 import { CredentialsStore } from '$lib/stores/credentials.svelte';
 import { FavoritesStore } from '$lib/stores/favorites.svelte';
 import { LibraryStore } from '$lib/stores/library.svelte';
@@ -141,7 +141,11 @@ export class App {
         return { url: resolved.url, source: resolved.source };
       },
       ...(options.createAudio ? { createAudio: options.createAudio } : {}),
-      ...(options.mediaSession ? { mediaSession: options.mediaSession } : {}),
+      // A real MediaSession by default. This was the whole bug: the port was only
+      // ever passed in by tests, so production fell back to the no-op and the OS
+      // media controls never appeared at all — the class was written, tested and
+      // dead. Tests still inject their own.
+      mediaSession: options.mediaSession ?? new BrowserMediaSession(),
     });
 
     this.connection = $state<ConnectionState>({

@@ -114,6 +114,9 @@ export function createGlobalBindings(app: App): Binding[] {
       scope: 'global',
       group: GROUPS.seek,
       description: 'seek forward 5s',
+      // Guarded: with nothing playing a seek has nothing to move, and the bar
+      // would render the phantom position it left behind.
+      when: () => app.player.state.track !== undefined,
       run: () => player.seekBy(5),
     },
     {
@@ -121,6 +124,7 @@ export function createGlobalBindings(app: App): Binding[] {
       scope: 'global',
       group: GROUPS.seek,
       description: 'seek back 5s',
+      when: () => app.player.state.track !== undefined,
       run: () => player.seekBy(-5),
     },
     {
@@ -128,6 +132,7 @@ export function createGlobalBindings(app: App): Binding[] {
       scope: 'global',
       group: GROUPS.seek,
       description: 'restart track',
+      when: () => app.player.state.track !== undefined,
       run: () => player.seek(0),
     },
 

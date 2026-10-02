@@ -21,9 +21,14 @@ export interface SortOption {
 
 export const SORT_OPTIONS: readonly SortOption[] = [
   { id: 'newest', label: 'recently added', hint: 'r', type: 'newest', paginated: true },
+  // `random` is the only sort that genuinely cannot paginate: asking the server
+  // for the next offset returns a different shuffle, so pages would overlap and
+  // repeat. `recent` and `frequent` are ordered server-side and stable across
+  // offset pages, so they can — they were marked unpaginated by mistake, which is
+  // why "most played" and "recently played" stopped after one page.
   { id: 'random', label: 'random', hint: 'z', type: 'random', paginated: false },
-  { id: 'recent', label: 'recently played', hint: 'p', type: 'recent', paginated: false },
-  { id: 'frequent', label: 'most played', hint: 'm', type: 'frequent', paginated: false },
+  { id: 'recent', label: 'recently played', hint: 'p', type: 'recent', paginated: true },
+  { id: 'frequent', label: 'most played', hint: 'm', type: 'frequent', paginated: true },
   {
     id: 'alphabeticalByName',
     label: 'album A-Z',

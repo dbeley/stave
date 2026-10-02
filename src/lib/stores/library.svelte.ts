@@ -155,7 +155,7 @@ export class LibraryStore {
         type: option.type,
         size: pageSize,
         offset,
-        // Random lists are not stable, so they are always a single page.
+        // `random` is the only sort that is not stable across offset pages.
       });
       const merged =
         refresh || offset === 0 ? albums : [...previous.items, ...dedupeAlbums(albums)];
@@ -164,7 +164,14 @@ export class LibraryStore {
         loading: false,
         error: undefined,
         offset: offset + albums.length,
-        hasMore: option.paginated && albums.length >= pageSize,
+        /*
+         * `hasMore` compares against how many *new* rows arrived, not how many
+         * were returned: a stable list can repeat rows across pages (the server
+         * decides the window), and using `albums.length` would then claim there is
+         * more to load forever, because `dedupe` keeps the item count from growing
+         * while the page still came back full.
+         */
+        hasMore: option.paginated && dedupeAlbums(albums).length >= pageSize,
         loadedAt: Date.now(),
       };
     } catch (error) {

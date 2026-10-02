@@ -62,6 +62,9 @@ const h = vi.hoisted(() => {
     isTrackStarred: () => true,
   };
 
+  /** Bindings the page registered most recently, for simulated keypresses. */
+  const registered: Array<{ keys: string[]; run: () => void }> = [];
+
   const app = {
     favorites,
     toasts: { info: vi.fn(), ok: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -72,11 +75,19 @@ const h = vi.hoisted(() => {
     downloads: { isCached: () => false, entry: () => undefined, cachedBytes: 0 },
     resolver: { isCached: () => false, cachedCount: 0 },
     player: { state: { track: undefined as Track | undefined } },
-    keyboard: { registerAll: vi.fn(() => () => {}) },
+    // Captures what the page registers, so a test can press a key for real
+    // (`tab` switches section) instead of watching a no-op stub.
+    keyboard: {
+      registerAll: vi.fn((bindings: Array<{ keys: string[]; run: () => void }>) => {
+        registered.length = 0;
+        registered.push(...bindings);
+        return () => {};
+      }),
+    },
     router: { navigate: vi.fn() },
   };
 
-  return { album, artist, track, actions, favorites, app };
+  return { album, artist, track, actions, favorites, app, registered };
 });
 
 vi.mock('$lib/app.svelte', () => ({ app: h.app, App: class {} }));
@@ -146,6 +157,13 @@ vi.mock('$lib/keyboard/list.svelte', async (importOriginal) => {
 
 import FavoritesPage from '$lib/pages/FavoritesPage.svelte';
 
+/** Press a key the page actually registered (no-op if it registered nothing). */
+async function press(key: string): Promise<void> {
+  const binding = h.registered.find((entry) => entry.keys.includes(key));
+  binding?.run();
+  await tick();
+}
+
 beforeEach(() => {
   h.favorites.state.artists = [];
   h.favorites.state.albums = [];
@@ -161,32 +179,69 @@ describe('FavoritesPage', () => {
     expect(h.favorites.load).toHaveBeenCalled();
   });
 
-  it('shows starred entities and per-section empty notes', async () => {
+  it('shows one section at a time, with the counts on every tab', async () => {
     h.favorites.state.albums = [h.album];
     render(FavoritesPage);
     await tick();
 
-    expect(screen.getByText('Neon Cartography')).toBeTruthy();
+    // The section bar lists all three with their counts…
+    expect(screen.getByRole('tab', { name: /artists/ }).textContent).toMatch(/0/);
+    expect(screen.getByRole('tab', { name: /albums/ }).textContent).toMatch(/1/);
+    expect(screen.getByRole('tab', { name: /tracks/ }).textContent).toMatch(/0/);
+
+    // …while only the focused section renders rows, so its own empty note shows.
     expect(screen.getByText(/no starred artists/)).toBeTruthy();
-    expect(screen.getByText(/no starred tracks/)).toBeTruthy();
+    expect(screen.queryByText('Neon Cartography')).toBeNull();
     expect(screen.queryByText(/nothing starred yet/)).toBeNull();
   });
 
-  it('renders the three section headings with counts', async () => {
-    h.favorites.state.artists = [h.artist];
+  it('switches section with tab, keeping a cursor per section', async () => {
+    h.favorites.state.albums = [h.album];
     h.favorites.state.tracks = [h.track];
     render(FavoritesPage);
     await tick();
 
-    expect(screen.getByText(/artists \(1\)/)).toBeTruthy();
-    expect(screen.getByText(/albums \(0\)/)).toBeTruthy();
-    expect(screen.getByText(/tracks \(1\)/)).toBeTruthy();
+    // The page starts on artists, so two presses reach the tracks section.
+    await press('tab');
+    expect(screen.getByText('Neon Cartography')).toBeTruthy();
+
+    await press('tab');
     expect(screen.getByText('Meridian Drift')).toBeTruthy();
+
+    // …and one more wraps back to artists, whose pane is empty here.
+    await press('tab');
+    expect(screen.getByText(/no starred artists/)).toBeTruthy();
+  });
+
+  it('shift+tab moves to the previous section', async () => {
+    h.favorites.state.tracks = [h.track];
+    render(FavoritesPage);
+    await tick();
+
+    // artists -> tracks is directly backwards from the artists section.
+    await press('shift+tab');
+    expect(screen.getByText('Meridian Drift')).toBeTruthy();
+  });
+
+  it('selects a section when its tab is clicked', async () => {
+    h.favorites.state.tracks = [h.track];
+    render(FavoritesPage);
+    await tick();
+
+    await fireEvent.click(screen.getByRole('tab', { name: /tracks/ }));
+    await tick();
+
+    expect(screen.getByText('Meridian Drift')).toBeTruthy();
+    expect(screen.queryByText(/no starred artists/)).toBeNull();
   });
 
   it('opens the album page when a row is activated', async () => {
     h.favorites.state.albums = [h.album];
     render(FavoritesPage);
+    await tick();
+
+    // Albums live in their own pane now, so focus it first.
+    await fireEvent.click(screen.getByRole('tab', { name: /albums/ }));
     await tick();
 
     const row = screen.getByText('Neon Cartography').closest('[role="option"]');
