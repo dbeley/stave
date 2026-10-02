@@ -99,10 +99,21 @@
     /*
       The pointer-receiving element carries its own vertical hit area: a single
       line of block characters is ~20px, too small for a thumb. Padding here (not
-      on an inert wrapper) makes the slider a ~28px target without widening the
-      click→fraction mapping.
+      on an inert wrapper) makes the slider bigger without widening the
+      click→fraction mapping. Kept as the terminal's modest hit area.
     */
     padding: 0.3rem 0;
+  }
+  /*
+    Touch shell: the thumb needs the spec's ≥44px floor. `min-height` plus flex
+    centering grows only the hit area — the block-character line stays a single
+    thin row — and the pointer target remains the slider element itself.
+  */
+  :global([data-shell='touch']) .seek {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0;
   }
   .filled {
     color: var(--accent);
