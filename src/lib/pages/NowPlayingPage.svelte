@@ -12,10 +12,11 @@
   import { onMount } from 'svelte';
   import { app } from '$lib/app.svelte';
   import AsciiArt from '$lib/components/AsciiArt.svelte';
-  import Meter from '$lib/components/Meter.svelte';
   import Panel from '$lib/components/Panel.svelte';
   import QueueList from '$lib/components/QueueList.svelte';
+  import SeekBar from '$lib/components/SeekBar.svelte';
   import StateMessage from '$lib/components/StateMessage.svelte';
+  import TransportControls from '$lib/components/TransportControls.svelte';
   import { COVER_SIZE } from '$lib/config';
   import { actions } from '$lib/ui/actionsRegistry.svelte';
   import { coverArtIdFor, coverArtUrl } from '$lib/ui/coverArt';
@@ -24,12 +25,7 @@
   const player = app.player;
 
   let track = $derived(player.state.track);
-  let duration = $derived(player.state.duration || track?.durationSec || 0);
   let coverId = $derived(track ? coverArtIdFor(track) : undefined);
-  // Same glyph vocabulary as the transport button in the bar below.
-  let transport = $derived(
-    player.state.status === 'playing' ? '||' : player.state.status === 'loading' ? '··' : '>',
-  );
   let starred = $derived(track ? app.favorites.isTrackStarred(track) : false);
   let cached = $derived(track ? app.resolver.isCached(track.id) : false);
   let shuffle = $derived(app.queue.state.shuffle);
@@ -169,53 +165,11 @@
         </dl>
 
         <div class="progress">
-          <Meter value={player.progress} width={48} />
-          <span class="times">
-            {formatDuration(player.state.position)}/{formatDuration(duration)}
-          </span>
+          <SeekBar width={48} showTimes />
         </div>
 
         <div class="controls">
-          <button
-            class="key"
-            title="previous (p)"
-            aria-label="previous track"
-            onclick={() => void player.previous()}
-          >
-            |&lt;&lt;
-          </button>
-          <button
-            class="key"
-            title="back 10s"
-            aria-label="seek back 10 seconds"
-            onclick={() => player.seekBy(-10)}
-          >
-            &lt;&lt;10
-          </button>
-          <button
-            class="key toggle"
-            title="play / pause (space)"
-            aria-label="play or pause"
-            onclick={() => void player.toggle()}
-          >
-            {transport}
-          </button>
-          <button
-            class="key"
-            title="forward 10s"
-            aria-label="seek forward 10 seconds"
-            onclick={() => player.seekBy(10)}
-          >
-            10&gt;&gt;
-          </button>
-          <button
-            class="key"
-            title="next (n)"
-            aria-label="next track"
-            onclick={() => void player.next()}
-          >
-            &gt;&gt;|
-          </button>
+          <TransportControls variant="button" seek10 />
           <span class="spacer"></span>
           <button
             class="key"
@@ -323,10 +277,6 @@
     margin-bottom: 0.7rem;
     color: var(--fg-dim);
   }
-  .times {
-    flex: none;
-    font-variant-numeric: tabular-nums;
-  }
   .controls {
     display: flex;
     align-items: center;
@@ -349,10 +299,6 @@
   .key:hover {
     border-color: var(--border-focus);
     color: var(--accent);
-  }
-  .key.toggle {
-    color: var(--accent);
-    font-weight: 700;
   }
   .key.active {
     border-color: var(--accent);
