@@ -1,9 +1,14 @@
 <!--
   Album list: random, recently added, A-Z and friends.
- *
- * The sort is part of the route (`#/albums?sort=…`) so it is linkable and the
- * browser back button behaves. `z` / `Z` cycle the sort from the keyboard.
- -->
+
+  The sort is part of the route (`#/albums?sort=…`) so it is linkable and the
+  browser back button behaves.
+
+  The sort orders are tabs and answer to `tab` / `shift+tab`, the same keys as
+  every other tabbed view — they used to be on `z` / `Z`. `z` still cycles to the
+  next order from anywhere: that is a global shortcut, and the toast it shows
+  makes it read as a command rather than a tab move.
+-->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { app } from '$lib/app.svelte';
@@ -11,8 +16,10 @@
   import ListView from '$lib/components/ListView.svelte';
   import Panel from '$lib/components/Panel.svelte';
   import StateMessage from '$lib/components/StateMessage.svelte';
-  import { SORT_OPTIONS, nextSort, sortOption } from '$lib/domain/sort';
+  import TabStrip from '$lib/components/TabStrip.svelte';
+  import { SORT_OPTIONS, sortOption, type AlbumListSort } from '$lib/domain/sort';
   import { ListCursor, listNavigationBindings } from '$lib/keyboard/list.svelte';
+  import { tabBindings } from '$lib/keyboard/tabs';
   import { albumListBindings } from '$lib/ui/albumKeys.svelte';
   import { actions } from '$lib/ui/actionsRegistry.svelte';
 
@@ -21,6 +28,15 @@
   let slice = $derived(app.library.list(sort));
   let option = $derived(sortOption(sort));
   let cursor = new ListCursor();
+
+  const SORT_IDS: string[] = SORT_OPTIONS.map((entry) => entry.id);
+  const SORT_TABS = SORT_OPTIONS.map((entry) => ({ id: entry.id, label: entry.label }));
+
+  /** Selecting a tab is a navigation, because the sort lives in the route. */
+  function selectSort(id: string): void {
+    // Ids come from SORT_OPTIONS, so this is the route's own sort type.
+    app.router.navigate({ name: 'albums', sort: id as AlbumListSort });
+  }
 
   // Load on first visit or when the sort changes.
   $effect(() => {
@@ -41,42 +57,20 @@
       ...albumListBindings(cursor, () => slice.items, {
         onOpen: (album) => actions.openAlbum(album.id),
       }),
-      {
-        keys: ['z'],
-        scope: 'page',
-        group: 'album',
-        description: 'next sort order',
-        run: () => app.router.navigate({ name: 'albums', sort: nextSort(sort, 1) }),
-      },
-      {
-        keys: ['Z'],
-        scope: 'page',
-        group: 'album',
-        description: 'previous sort order',
-        run: () => app.router.navigate({ name: 'albums', sort: nextSort(sort, -1) }),
-      },
+      ...tabBindings({ ids: SORT_IDS, active: () => sort, onSelect: selectSort }),
     ]),
   );
 </script>
 
 <main class="page">
-  <nav class="tabs" aria-label="sort order">
-    {#each SORT_OPTIONS as tab (tab.id)}
-      <button
-        class="tab"
-        class:active={tab.id === sort}
-        title="{tab.label} ({tab.hint})"
-        onclick={() => app.router.navigate({ name: 'albums', sort: tab.id })}
-      >
-        {tab.label}
-      </button>
-    {/each}
-    <span class="spacer"></span>
-    <span class="dim"
-      >{slice.items.length} loaded{#if slice.loading}
-        · loading…{/if}</span
-    >
-  </nav>
+  <TabStrip
+    tabs={SORT_TABS}
+    active={sort}
+    onSelect={selectSort}
+    ariaLabel="sort order"
+    note="{slice.items.length} loaded{slice.loading ? ' · loading…' : ''}"
+    tip="tab switches sort"
+  />
 
   <Panel
     title="albums"
@@ -98,7 +92,7 @@
       <StateMessage
         kind="empty"
         message="no albums for this sort order"
-        hint="press z to try another sort, or check the server library"
+        hint="press tab for another sort order, or check the server library"
       />
     {:else}
       <ListView
@@ -127,33 +121,6 @@
     min-height: 0;
     padding: 0.55rem;
     gap: 0.5rem;
-  }
-  .tabs {
-    display: flex;
-    align-items: center;
-    gap: 0.3em;
-    flex-wrap: wrap;
-  }
-  .tab {
-    border: 1px solid var(--border);
-    padding: 0.1rem 0.5rem;
-    color: var(--fg-dim);
-  }
-  .tab:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  .tab.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--bg);
-    font-weight: 700;
-  }
-  .spacer {
-    flex: 1;
-  }
-  .dim {
-    color: var(--fg-faint);
   }
   .more {
     margin: 0.4rem 0 0;

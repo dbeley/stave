@@ -122,14 +122,42 @@
     }
   });
 
-  // Never leave the cursor on a heading.
+  /**
+   * Never leave the cursor on a heading — but which way to skip depends on where
+   * the cursor came from.
+   *
+   * Always skipping forwards pinned the cursor to the first row of each
+   * sub-category: pressing `k` from the first album landed on the "albums"
+   * heading, which was then "corrected" straight back down onto that same album,
+   * so there was no way up out of a section.
+   */
+  let lastSelectable = $state(0);
+
   $effect(() => {
+    const index = cursor.index;
+    const row = rows[index];
+    if (row && row.kind !== 'heading') {
+      lastSelectable = index;
+      return;
+    }
     const selectable = selectableIndices();
     if (selectable.length === 0) return;
-    if (!selectable.includes(cursor.index)) {
-      const next = selectable.find((index) => index > cursor.index) ?? selectable[0]!;
-      cursor.set(next);
-    }
+    const forward = selectable.find((candidate) => candidate > index);
+    const backward = [...selectable].reverse().find((candidate) => candidate < index);
+    const next =
+      index > lastSelectable
+        ? (forward ?? selectable[selectable.length - 1])
+        : (backward ?? selectable[0]);
+    if (next !== undefined) cursor.set(next);
+  });
+
+  // A new result set starts at the top, so Enter drops you onto the first result.
+  let lastResultsFor = '';
+  $effect(() => {
+    const resultsFor = app.search.state.resultsFor;
+    if (resultsFor === lastResultsFor) return;
+    lastResultsFor = resultsFor;
+    cursor.set(0);
   });
 
   onMount(() =>
@@ -188,13 +216,20 @@
     type="search"
     bind:this={input}
     value={query}
-    placeholder="search artists, albums, tracks…   (/ to focus, enter to run now)"
+    placeholder="search artists, albums, tracks…   (/ to focus, enter to search and jump to the results)"
     aria-label="search"
     oninput={(event) => app.search.setQuery((event.currentTarget as HTMLInputElement).value)}
     onkeydown={(event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
         void app.search.submit();
+        /*
+         * Enter means "run it, then go and look at the results". Leaving focus in
+         * the field swallowed every navigation key — the router ignores keys typed
+         * into a text input — so the results were only reachable by pressing tab
+         * repeatedly. An empty query has nothing to jump to, so focus stays put.
+         */
+        if (app.search.hasQuery) input?.blur();
       }
       if (event.key === 'Escape') {
         event.preventDefault();

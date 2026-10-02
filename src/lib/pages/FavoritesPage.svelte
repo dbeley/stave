@@ -14,17 +14,29 @@
   import ListView from '$lib/components/ListView.svelte';
   import Panel from '$lib/components/Panel.svelte';
   import StateMessage from '$lib/components/StateMessage.svelte';
+  import TabStrip from '$lib/components/TabStrip.svelte';
   import TrackRow from '$lib/components/TrackRow.svelte';
   import type { Album, Artist, Track } from '$lib/domain/types';
   import { ListCursor, listNavigationBindings } from '$lib/keyboard/list.svelte';
+  import { tabBindings } from '$lib/keyboard/tabs';
   import type { Binding } from '$lib/keyboard/registry.svelte';
   import { actions } from '$lib/ui/actionsRegistry.svelte';
 
   /** 0 artists · 1 albums · 2 tracks — the order the sections are shown in. */
-  const PANES = 3;
-  const LABELS = ['artists', 'albums', 'tracks'] as const;
+  const SECTIONS = [
+    { id: 'artists', label: 'artists' },
+    { id: 'albums', label: 'albums' },
+    { id: 'tracks', label: 'tracks' },
+  ] as const;
+  const SECTION_IDS: string[] = SECTIONS.map((section) => section.id);
 
+  // Still numeric: every pane's bindings are guarded with `when: () => focus === n`.
   let focus = $state(0);
+
+  function selectSection(id: string): void {
+    const index = SECTION_IDS.indexOf(id);
+    if (index >= 0) focus = index;
+  }
   let artistCursor = new ListCursor();
   let albumCursor = new ListCursor();
   let trackCursor = new ListCursor();
@@ -38,6 +50,8 @@
     favorites.albums.length,
     favorites.tracks.length,
   ]);
+  /** The strip's view of the sections: one entry per section, with its count. */
+  let tabs = $derived(SECTIONS.map((section, index) => ({ ...section, count: counts[index] })));
 
   function openArtist(artist: Artist): void {
     actions.openArtist(artist.id);
@@ -226,25 +240,11 @@
         2,
       ),
       // ---- pane switching ----
-      {
-        keys: ['tab'],
-        scope: 'page',
-        group: 'navigation',
-        description: 'next section',
-        hint: true,
-        run: () => {
-          focus = (focus + 1) % PANES;
-        },
-      },
-      {
-        keys: ['shift+tab'],
-        scope: 'page',
-        group: 'navigation',
-        description: 'previous section',
-        run: () => {
-          focus = (focus + PANES - 1) % PANES;
-        },
-      },
+      ...tabBindings({
+        ids: SECTION_IDS,
+        active: () => SECTION_IDS[focus] ?? 'artists',
+        onSelect: selectSection,
+      }),
     ]),
   );
 </script>
@@ -274,26 +274,16 @@
       />
     {:else}
       <!--
-        The section bar doubles as the tab strip: counts on every section, so you
-        can see what is where without visiting each one.
+        The section bar is the tab strip: counts on every section, so you can see
+        what is where without visiting each one.
       -->
-      <div class="tabs" role="tablist" aria-label="favourite sections">
-        {#each LABELS as label, index (label)}
-          <button
-            type="button"
-            class="tab"
-            class:active={focus === index}
-            role="tab"
-            aria-selected={focus === index}
-            onclick={() => (focus = index)}
-            data-pane={index}
-          >
-            {label} <span class="count">{counts[index]}</span>
-          </button>
-        {/each}
-        <span class="spacer"></span>
-        <span class="tip dim">tab switches section</span>
-      </div>
+      <TabStrip
+        {tabs}
+        active={SECTION_IDS[focus] ?? 'artists'}
+        onSelect={selectSection}
+        ariaLabel="favourite sections"
+        tip="tab switches section"
+      />
 
       {#if focus === 0}
         {#if favorites.artists.length === 0}
@@ -364,46 +354,6 @@
     min-height: 0;
     padding: 0.55rem;
     gap: 0.5rem;
-  }
-  .tabs {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    margin-bottom: 0.3rem;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.25rem;
-  }
-  .tab {
-    background: none;
-    border: none;
-    border-left: 2px solid transparent;
-    padding: 0.1rem 0.5rem;
-    font: inherit;
-    color: var(--fg-dim);
-    cursor: pointer;
-  }
-  .tab.active {
-    color: var(--accent);
-    border-left-color: var(--accent);
-    background: var(--bg-elev-2);
-  }
-  .count {
-    color: var(--fg-faint);
-  }
-  .tab.active .count {
-    color: var(--accent-dim);
-  }
-  .spacer {
-    flex: 1;
-  }
-  .tip {
-    font-size: 0.9em;
-  }
-  /* Key hints are noise where the keys do not exist. */
-  @media (pointer: coarse) {
-    .tip {
-      display: none;
-    }
   }
   .empty-note {
     color: var(--fg-faint);

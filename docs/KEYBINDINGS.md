@@ -40,7 +40,7 @@ and the page shadows the globals.
 | `g n`                 | now playing                                                                             |
 | `g s`                 | settings                                                                                |
 | `q` / `escape`        | back / close the current overlay                                                        |
-| `z`                   | next album sort order (on the albums page)                                              |
+| `z`                   | next album sort order (from anywhere)                                                   |
 | `R`                   | reload the current view from the server                                                 |
 | `:`                   | go to… — the palette of destinations (also the touch navigation)                        |
 | `?`                   | keyboard help                                                                           |
@@ -137,9 +137,16 @@ Capital keys, so they never collide with the per-track ones above.
 
 ## Albums page
 
-| key       | action                     |
-| --------- | -------------------------- |
-| `z` / `Z` | next / previous sort order |
+Each sort order is a tab, and the strip is the same component as the favourites
+sections — same look, same keys.
+
+| key         | action              |
+| ----------- | ------------------- |
+| `tab`       | next sort order     |
+| `shift+tab` | previous sort order |
+
+`z` is a global shortcut: it jumps to the next order from any page and shows
+which one it landed on.
 
 ## Now playing (`g n`)
 
@@ -160,8 +167,9 @@ the queue underneath (same keys as the queue window, since it is the same list).
 ## Search
 
 While the field has focus every keystroke is text; `escape` leaves the field,
-`↓` jumps into the results, `enter` runs the search immediately. In the results,
-navigation and item keys work as for track/album rows, plus:
+`↓` jumps into the results, `enter` runs the search and moves focus onto the
+results so they can be navigated at once. In the results, navigation and item
+keys work as for track/album rows, plus:
 
 | key | action                                            |
 | --- | ------------------------------------------------- |

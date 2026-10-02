@@ -54,7 +54,14 @@ function makeApp(res: SearchResults, over: Record<string, unknown> = {}): Record
     focusRequests: { search: 0 },
     toasts: { info: vi.fn(), ok: vi.fn(), warn: vi.fn(), error: vi.fn() },
     player: { state: { track: undefined as Track | undefined } },
-    keyboard: { registerAll: vi.fn(() => () => {}) },
+    keyboard: {
+      // Captured, so a test can press a real key (`k` out of a section) instead
+      // of watching a no-op stub.
+      registerAll: (bindings: Array<{ keys: string[]; run: () => void }>) => {
+        registered = bindings;
+        return () => {};
+      },
+    },
     settings: { state: { showTechnicalColumns: false, asciiCoverArt: false } },
     favorites: {
       isAlbumStarred: () => false,
@@ -82,6 +89,25 @@ function makeApp(res: SearchResults, over: Record<string, unknown> = {}): Record
 function install(app: Record<string, unknown>): void {
   for (const key of Object.keys(mocks.app)) delete mocks.app[key];
   Object.assign(mocks.app, app);
+}
+
+/** What the page registered, so keys can be pressed for real. */
+let registered: Array<{ keys: string[]; when?: () => boolean; run: () => void }> = [];
+
+async function press(key: string): Promise<void> {
+  const binding = registered.find(
+    (candidate) => candidate.keys.includes(key) && (!candidate.when || candidate.when()),
+  );
+  expect(binding, `no binding registered for ${key}`).toBeTruthy();
+  binding?.run();
+  await tick();
+}
+
+/** Text of the row the cursor is on. */
+function selectedText(container: HTMLElement): string {
+  return (
+    container.querySelector('[role="option"][aria-selected="true"]')?.textContent?.trim() ?? ''
+  );
 }
 
 beforeEach(() => {
@@ -183,6 +209,65 @@ describe('SearchPage', () => {
     await fireEvent.keyDown(screen.getByLabelText('search'), { key: 'Enter' });
 
     expect(mocks.app.search.submit).toHaveBeenCalled();
+  });
+
+  it('Enter hands focus to the results instead of leaving it in the field', async () => {
+    install(makeApp(results({ artists: [artist('ar1', 'Aurelia Vance')] })));
+
+    render(SearchPage);
+    await tick();
+
+    const input = screen.getByLabelText('search') as HTMLInputElement;
+    input.focus();
+    await fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mocks.app.search.submit).toHaveBeenCalled();
+    // The router ignores keys typed into a text input, so staying in the field
+    // made the results unreachable without pressing tab several times.
+    expect(document.activeElement).not.toBe(input);
+  });
+
+  it('keeps focus when there is nothing to search for', async () => {
+    install(makeApp(results(), { search: { hasQuery: false } }));
+
+    render(SearchPage);
+    await tick();
+
+    const input = screen.getByLabelText('search') as HTMLInputElement;
+    input.focus();
+    await fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('walks up out of a section instead of sticking to its first row', async () => {
+    install(
+      makeApp(
+        results({
+          artists: [artist('ar1', 'Aurelia Vance')],
+          albums: [album('al1', 'Neon Cartography')],
+          tracks: [track('t1', 'Meridian Drift')],
+        }),
+      ),
+    );
+
+    const { container } = render(SearchPage);
+    await tick();
+
+    // Opens on the first result, not on the "artists" heading above it.
+    expect(selectedText(container)).toContain('Aurelia Vance');
+
+    // `j` crosses the "albums" heading and lands on the album.
+    await press('j');
+    expect(selectedText(container)).toContain('Neon Cartography');
+
+    /*
+     * `k` must come back to the artist. The heading it lands on first used to be
+     * skipped forwards — i.e. straight back down onto that same album — so the way
+     * up was one row long and each section was a trap.
+     */
+    await press('k');
+    expect(selectedText(container)).toContain('Aurelia Vance');
   });
 
   it('activating a track replaces the queue and plays it', async () => {
