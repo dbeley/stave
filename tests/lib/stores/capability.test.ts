@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { CapabilityStore, applyShellToDocument, type MediaQueryLike } from '$lib/stores/capability.svelte';
+import { describe, expect, it } from 'vitest';
+import {
+  CapabilityStore,
+  applyShellToDocument,
+  type MediaQueryLike,
+} from '$lib/stores/capability.svelte';
 
 function fakeQuery(matches: boolean) {
   const listeners: (() => void)[] = [];
@@ -8,7 +12,13 @@ function fakeQuery(matches: boolean) {
     addEventListener: (_t, l) => listeners.push(l),
     removeEventListener: () => {},
   };
-  return { query, fire: () => { query.matches = !query.matches; listeners.forEach((l) => l()); } };
+  return {
+    query,
+    fire: () => {
+      query.matches = !query.matches;
+      listeners.forEach((l) => l());
+    },
+  };
 }
 
 describe('CapabilityStore', () => {
