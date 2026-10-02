@@ -305,6 +305,21 @@ export class App {
     return this.keyboard.handle(event, { editable: isEditable(event) });
   }
 
+  /**
+   * Android hardware back button (and any other "go back" affordance).
+   *
+   * An open overlay is modal, so it is closed first. Otherwise walk the
+   * in-app route history. Returns `false` when there is nothing left to do,
+   * which tells the caller (the native plugin) to let the OS exit the app.
+   */
+  handleBack(): boolean {
+    if (this.ui.anyOverlayOpen) {
+      this.ui.closeOverlay();
+      return true;
+    }
+    return this.router.back();
+  }
+
   // -------------------------------------------------------------- commands
 
   /** Request the search input to take focus (the `/` shortcut). */

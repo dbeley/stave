@@ -54,6 +54,19 @@ describe('overlay scope isolation', () => {
   });
 });
 
+describe('hardware back button', () => {
+  it('closes an overlay before walking history', () => {
+    const app = makeApp();
+    app.ui.openOverlay('queue');
+    expect(app.handleBack()).toBe(true);
+    expect(app.ui.anyOverlayOpen).toBe(false);
+  });
+
+  it('returns false when there is no overlay and no history', () => {
+    expect(makeApp().handleBack()).toBe(false);
+  });
+});
+
 describe('capability shell', () => {
   it('exposes a terminal shell under jsdom defaults', () => {
     expect(makeApp().capability.shell).toBe('terminal');
