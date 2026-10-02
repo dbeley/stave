@@ -90,9 +90,12 @@
     {/if}
   </div>
 
-  <!-- Touch gets the roomy mini-player; desktop keeps the dense terminal bar. -->
+  <!-- Touch gets the roomy mini-player; desktop keeps the dense terminal bar.
+       MiniPlayer is suppressed under the blocking login overlay, like BottomNav. -->
   {#if shell === 'touch'}
-    <MiniPlayer />
+    {#if !needsLogin && app.ui.state.overlay !== 'login'}
+      <MiniPlayer />
+    {/if}
   {:else}
     <NowPlayingBar />
   {/if}

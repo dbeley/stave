@@ -144,7 +144,7 @@
   .scrub {
     display: flex;
     align-items: center;
-    padding: 0.35rem 0.6rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.35rem 0.6rem 0.3rem;
     background: var(--bg-elev-2);
   }
 </style>
