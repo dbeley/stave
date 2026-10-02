@@ -86,9 +86,15 @@ export function longPress(node: HTMLElement, params: LongPressParams): LongPress
     clearTimer();
   };
 
+  const onPointerUp = (event: PointerEvent) => {
+    if (event.pointerType === 'mouse') return;
+    clearTimer();
+  };
+
   node.addEventListener('pointerdown', onPointerDown);
   node.addEventListener('pointermove', onPointerMove);
   node.addEventListener('pointercancel', onPointerCancel);
+  node.addEventListener('pointerup', onPointerUp);
 
   return {
     update(next: LongPressParams) {
@@ -100,6 +106,7 @@ export function longPress(node: HTMLElement, params: LongPressParams): LongPress
       node.removeEventListener('pointerdown', onPointerDown);
       node.removeEventListener('pointermove', onPointerMove);
       node.removeEventListener('pointercancel', onPointerCancel);
+      node.removeEventListener('pointerup', onPointerUp);
     },
   };
 }

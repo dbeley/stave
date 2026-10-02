@@ -109,6 +109,38 @@ describe('longPress', () => {
 
     action.destroy();
   });
+
+  it('does not fire when the pointer is released before the delay', async () => {
+    vi.useFakeTimers();
+    const onLongPress = vi.fn();
+    const { node, action } = mountLongPress({ onLongPress });
+
+    node.dispatchEvent(pointer('pointerdown', { pointerType: 'touch' }));
+    node.dispatchEvent(pointer('pointerup', { pointerType: 'touch' }));
+    await vi.advanceTimersByTimeAsync(600);
+    expect(onLongPress).not.toHaveBeenCalled();
+
+    action.destroy();
+  });
+
+  it('does not cancel an already-fired press when the pointer is released', () => {
+    vi.useFakeTimers();
+    const onLongPress = vi.fn();
+    const { node, action } = mountLongPress({ onLongPress });
+
+    node.dispatchEvent(pointer('pointerdown', { pointerType: 'touch' }));
+    vi.advanceTimersByTime(500);
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+
+    node.dispatchEvent(pointer('pointerup', { pointerType: 'touch' }));
+
+    // The swallow for the click that follows a fired press is still armed.
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    node.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
+
+    action.destroy();
+  });
 });
 
 describe('dropIndex', () => {
