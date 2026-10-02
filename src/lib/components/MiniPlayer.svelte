@@ -53,7 +53,8 @@
     </div>
   </div>
 
-  <!-- The line stays thin; the padded row is the ~24px touch target. -->
+  <!-- The scrub's hit area lives on the slider element itself (SeekBar pads the
+       interactive span), so a thumb near the line still lands on the slider. -->
   <div class="scrub">
     <SeekBar width={40} interactive />
   </div>
@@ -135,16 +136,15 @@
     display: inline-flex;
     align-items: center;
   }
-  /* Comfortable touch targets: the compact glyphs get thumb-sized padding. */
+  /* The ≥44px floor comes from TransportControls' touch rule; the glyphs are
+     bumped slightly so they read at thumb distance. */
   .controls :global(.key) {
-    min-width: 2.4em;
-    min-height: 2.4em;
     font-size: 1.05em;
   }
   .scrub {
     display: flex;
     align-items: center;
-    padding: 0.35rem 0.6rem 0.3rem;
+    padding: 0 0.6rem;
     background: var(--bg-elev-2);
   }
 </style>

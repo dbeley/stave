@@ -104,4 +104,13 @@
     color: var(--accent);
     font-weight: 700;
   }
+  /* Touch shell: glyph keys become finger-sized. px, not em, because the root
+     font is only 13px — 2.6em would be ~34px, under the 44px floor. */
+  :global([data-shell='touch']) .key {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>

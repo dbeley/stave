@@ -70,6 +70,7 @@
     class="seek"
     role="slider"
     tabindex="0"
+    aria-label={label ?? 'seek'}
     aria-valuemin="0"
     aria-valuemax="100"
     aria-valuenow={Math.round(clamped * 100)}
@@ -95,6 +96,13 @@
     letter-spacing: -0.05em;
     cursor: pointer;
     touch-action: none;
+    /*
+      The pointer-receiving element carries its own vertical hit area: a single
+      line of block characters is ~20px, too small for a thumb. Padding here (not
+      on an inert wrapper) makes the slider a ~28px target without widening the
+      click→fraction mapping.
+    */
+    padding: 0.3rem 0;
   }
   .filled {
     color: var(--accent);

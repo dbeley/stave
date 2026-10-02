@@ -71,6 +71,19 @@ describe('SeekBar', () => {
     expect(slider.getAttribute('aria-valuenow')).toBe('25');
   });
 
+  it('defaults the slider name to seek', async () => {
+    await mount({ position: 50, duration: 200, progress: 0.25 }, { interactive: true });
+    expect(screen.getByRole('slider').getAttribute('aria-label')).toBe('seek');
+  });
+
+  it('names the slider from the label', async () => {
+    await mount(
+      { position: 50, duration: 200, progress: 0.25 },
+      { interactive: true, label: 'progress' },
+    );
+    expect(screen.getByRole('slider').getAttribute('aria-label')).toBe('progress');
+  });
+
   it('seeks to the tapped fraction', async () => {
     const { player } = await mount(
       { position: 0, duration: 200, progress: 0.25 },

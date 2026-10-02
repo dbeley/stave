@@ -148,7 +148,7 @@
     background: none;
     border: none;
     padding: 0.55em 0;
-    min-height: 2.6em;
+    min-height: 44px;
     cursor: pointer;
     touch-action: manipulation;
   }
