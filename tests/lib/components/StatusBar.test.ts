@@ -69,7 +69,7 @@ describe('StatusBar', () => {
     await mount();
 
     expect(screen.getByText('stave')).toBeTruthy();
-    expect(screen.getByText('v0.1.0')).toBeTruthy();
+    expect(screen.getByText(`v${__APP_VERSION__}`)).toBeTruthy();
     expect(screen.getByText('albums (newest)')).toBeTruthy();
   });
 

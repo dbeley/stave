@@ -163,7 +163,10 @@ describe('SettingsPage', () => {
     render(SettingsPage);
     await tick();
 
-    expect(screen.getByText('0.1.0')).toBeTruthy();
+    // Compare against the build-time constant, not a literal: package.json is
+    // the single source of truth, and a hardcoded version turns every release
+    // bump into a red test that says nothing about the page.
+    expect(screen.getByText(__APP_VERSION__)).toBeTruthy();
     expect(screen.getByText('http://music.example')).toBeTruthy();
     expect(screen.getByText(/connected/)).toBeTruthy();
     expect(screen.getByText(/0\.54\.0/)).toBeTruthy();
