@@ -22,9 +22,11 @@ const DEFAULT_SLOP = 10;
 /**
  * Svelte action: fire `onLongPress` after a touch/pen pointer is held still for
  * `delay` ms. Mouse pointers are ignored. Movement past `slop` in either axis,
- * or a `pointercancel`, aborts the press. Once fired, the next `click` is
- * swallowed (one-shot capture listener) so the long-press never also activates
- * the row underneath.
+ * or a `pointercancel`, aborts the press. Presses that start on an interactive
+ * child (a button, link, input, …) are ignored — that child owns the pointer.
+ * Once fired, the next `click` (and `contextmenu`, which Android emits instead
+ * of a click) is swallowed one-shot, so the long-press never also activates the
+ * row underneath and the native selection menu never appears.
  */
 export function longPress(node: HTMLElement, params: LongPressParams): LongPressAction {
   let current = params;
@@ -51,6 +53,17 @@ export function longPress(node: HTMLElement, params: LongPressParams): LongPress
 
   const onPointerDown = (event: PointerEvent) => {
     if (event.pointerType === 'mouse') return;
+    // A press that starts on an interactive child (a drag handle, a row's
+    // inline button) must not open the action menu: the child owns that
+    // pointer. Svelte delegates `pointerdown`, so the action's own listener
+    // fires before the child's and would otherwise win the race.
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest('button, a, input, select, textarea, [role="button"]')
+    ) {
+      return;
+    }
     clearTimer();
     startX = event.clientX;
     startY = event.clientY;
@@ -60,15 +73,23 @@ export function longPress(node: HTMLElement, params: LongPressParams): LongPress
       tracking = false;
 
       // A press that ends where it started still produces a `click`; catch it
-      // in the capture phase before the row's own handler can run.
+      // in the capture phase before the row's own handler can run. Android's
+      // long-press often emits a `contextmenu` and *no* click, so that is
+      // swallowed too (and disarms the pending swallow) — otherwise the native
+      // text-selection menu shows on the held row and the click swallow lingers
+      // to eat the next tap.
       clearSwallow();
-      const swallow = (click: Event) => {
-        click.preventDefault();
-        click.stopPropagation();
+      const swallow = (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
         clearSwallow();
       };
       window.addEventListener('click', swallow, { capture: true });
-      removeSwallow = () => window.removeEventListener('click', swallow, { capture: true });
+      window.addEventListener('contextmenu', swallow, { capture: true });
+      removeSwallow = () => {
+        window.removeEventListener('click', swallow, { capture: true });
+        window.removeEventListener('contextmenu', swallow, { capture: true });
+      };
 
       current.onLongPress();
     }, current.delay ?? DEFAULT_DELAY);
@@ -84,6 +105,9 @@ export function longPress(node: HTMLElement, params: LongPressParams): LongPress
 
   const onPointerCancel = () => {
     clearTimer();
+    // If the browser cancels the pointer after a press already fired (a system
+    // gesture), drop the swallow so it cannot eat an unrelated later tap.
+    clearSwallow();
   };
 
   const onPointerUp = (event: PointerEvent) => {

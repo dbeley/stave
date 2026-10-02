@@ -303,10 +303,14 @@ a:hover {
    the desktop terminal shell keeps its denser layout.
    ========================================================================== */
 
-/* Rows are the primary tap target: give them a comfortable 44px floor. */
+/* Rows are the primary tap target: give them a comfortable 44px floor. A held
+   row is a long-press target, not text to select, so suppress the Android
+   selection/context menu that would otherwise appear on a long hold. */
 [data-shell='touch'] .row {
   min-height: 44px;
   align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* The dense technical column (format/bitrate) is unreadable on a phone and

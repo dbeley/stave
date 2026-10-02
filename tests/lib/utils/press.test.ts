@@ -76,6 +76,21 @@ describe('longPress', () => {
     action.destroy();
   });
 
+  it('does not fire when the press starts on an interactive child', () => {
+    vi.useFakeTimers();
+    const onLongPress = vi.fn();
+    const { node, action } = mountLongPress({ onLongPress });
+
+    const button = document.createElement('button');
+    node.appendChild(button);
+
+    button.dispatchEvent(pointer('pointerdown', { pointerType: 'touch' }));
+    vi.advanceTimersByTime(500);
+    expect(onLongPress).not.toHaveBeenCalled();
+
+    action.destroy();
+  });
+
   it('swallows the click that follows a fired long-press', () => {
     vi.useFakeTimers();
     const onLongPress = vi.fn();
@@ -138,6 +153,47 @@ describe('longPress', () => {
     const click = new MouseEvent('click', { bubbles: true, cancelable: true });
     node.dispatchEvent(click);
     expect(click.defaultPrevented).toBe(true);
+
+    action.destroy();
+  });
+
+  it('swallows a contextmenu that follows a fired press instead of a click', () => {
+    vi.useFakeTimers();
+    const onLongPress = vi.fn();
+    const { node, action } = mountLongPress({ onLongPress });
+
+    node.dispatchEvent(pointer('pointerdown', { pointerType: 'touch' }));
+    vi.advanceTimersByTime(500);
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+
+    // Android long-press: a contextmenu, no click. It is swallowed (so the
+    // native menu never shows) and disarms the pending click swallow.
+    const menu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    node.dispatchEvent(menu);
+    expect(menu.defaultPrevented).toBe(true);
+
+    // A later, unrelated tap must not be eaten by the lingering swallow.
+    const later = new MouseEvent('click', { bubbles: true, cancelable: true });
+    node.dispatchEvent(later);
+    expect(later.defaultPrevented).toBe(false);
+
+    action.destroy();
+  });
+
+  it('disarms the swallow when the pointer is cancelled after firing', () => {
+    vi.useFakeTimers();
+    const onLongPress = vi.fn();
+    const { node, action } = mountLongPress({ onLongPress });
+
+    node.dispatchEvent(pointer('pointerdown', { pointerType: 'touch' }));
+    vi.advanceTimersByTime(500);
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+
+    node.dispatchEvent(pointer('pointercancel', { pointerType: 'touch' }));
+
+    const later = new MouseEvent('click', { bubbles: true, cancelable: true });
+    node.dispatchEvent(later);
+    expect(later.defaultPrevented).toBe(false);
 
     action.destroy();
   });
