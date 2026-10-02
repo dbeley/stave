@@ -10,6 +10,7 @@
   import HelpOverlay from '$lib/components/HelpOverlay.svelte';
   import HintBar from '$lib/components/HintBar.svelte';
   import LoginOverlay from '$lib/components/LoginOverlay.svelte';
+  import MiniPlayer from '$lib/components/MiniPlayer.svelte';
   import NowPlayingBar from '$lib/components/NowPlayingBar.svelte';
   import QueueOverlay from '$lib/components/QueueOverlay.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
@@ -89,7 +90,12 @@
     {/if}
   </div>
 
-  <NowPlayingBar />
+  <!-- Touch gets the roomy mini-player; desktop keeps the dense terminal bar. -->
+  {#if shell === 'touch'}
+    <MiniPlayer />
+  {:else}
+    <NowPlayingBar />
+  {/if}
   {#if shell === 'terminal'}
     <HintBar />
   {:else if !needsLogin && app.ui.state.overlay !== 'login'}
