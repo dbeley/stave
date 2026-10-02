@@ -115,12 +115,22 @@ export class KeyboardRouter {
   /** Short, always-visible hints for the current context. */
   hints(): Binding[] {
     const scopes = this.options.activeScopes();
-    return this.bindings.filter(
-      (binding) =>
-        binding.hint === true &&
-        scopes.includes(binding.scope) &&
-        (!binding.when || binding.when()),
-    );
+    /*
+     * Ordered by scope priority (most specific first), not registration order.
+     * The hint bar truncates to a dozen, and global bindings are registered
+     * before any page or overlay — so without this an open queue window would
+     * have all of its own hints pushed off the end by the globals, which is the
+     * opposite of showing what the current context can do.
+     */
+    const out: Binding[] = [];
+    for (const scope of scopes) {
+      for (const binding of this.bindings) {
+        if (binding.scope === scope && binding.hint === true && (!binding.when || binding.when())) {
+          out.push(binding);
+        }
+      }
+    }
+    return out;
   }
 
   get pendingSequence(): string {
@@ -215,7 +225,7 @@ export class KeyboardRouter {
     this.timer = setTimer(() => {
       this.timer = null;
       this.clearPending();
-    }, this.options.sequenceTimeoutMs ?? 1200);
+    }, this.options.sequenceTimeoutMs ?? 3000);
   }
 }
 

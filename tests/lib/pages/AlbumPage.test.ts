@@ -112,7 +112,7 @@ describe('AlbumPage', () => {
     await fireEvent.click(screen.getByRole('button', { name: '[P] play' }));
     expect(mocks.actions.playAlbumNow).toHaveBeenCalledWith(a);
 
-    await fireEvent.click(screen.getByRole('button', { name: '[N] next' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'next' }));
     expect(mocks.actions.enqueueAlbum).toHaveBeenCalledWith(a, 'next');
 
     await fireEvent.click(screen.getByRole('button', { name: '[A] queue' }));

@@ -4,7 +4,7 @@
  * Clicking a row behaves as specified: a track replaces the queue and plays, an
  * album opens its page, an artist opens theirs. Every result also carries
  * explicit "queue" buttons so the same actions are reachable by mouse, and the
- * keyboard shortcuts (a = append, n = play next) work on the selected row.
+ * keyboard shortcut (a = append) works on the selected row.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
@@ -164,13 +164,6 @@
     app.keyboard.registerAll([
       ...listNavigationBindings(cursor, { hint: true, onActivate: () => activate() }),
       {
-        keys: ['n'],
-        scope: 'page',
-        group: 'search',
-        description: 'play next',
-        run: () => queueRow('next'),
-      },
-      {
         keys: ['a'],
         scope: 'page',
         group: 'search',
@@ -260,7 +253,7 @@
       <StateMessage
         kind="info"
         message="type to search"
-        hint="enter on a track replaces the queue and plays · a appends · n plays next"
+        hint="enter on a track replaces the queue and plays · a appends"
       />
     {:else if app.search.state.loading && rows.length === 0}
       <StateMessage kind="loading" message="searching" />

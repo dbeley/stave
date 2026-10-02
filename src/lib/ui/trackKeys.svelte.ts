@@ -3,11 +3,10 @@
  *
  *   enter  play now — the queue is replaced by the surrounding list, starting
  *          at this track (the behaviour the spec asks for)
- *   n      play next (insert after the current track, keep playing)
  *   a      add to the end of the queue
  *   f      toggle favourite
  *   L      listen later for the track's album (albums only, local)
- *   o      action menu
+ *   o      action menu (hold `n` here for "play next")
  *   y      go to the artist
  */
 
@@ -51,16 +50,6 @@ export function trackListBindings(
       group,
       description: 'play now (replaces queue)',
       run: () => activate(current(), cursor.index),
-    },
-    {
-      keys: ['n'],
-      scope,
-      group,
-      description: 'play next',
-      run: () => {
-        const track = current();
-        if (track) actions.enqueueTrack(track, 'next');
-      },
     },
     {
       keys: ['a'],

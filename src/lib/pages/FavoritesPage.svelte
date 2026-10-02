@@ -121,16 +121,6 @@
             onActivate: (album: Album) => openAlbum(album),
           }),
           {
-            keys: ['n'],
-            scope: 'page',
-            group: 'favorites',
-            description: 'play next',
-            run: () => {
-              const album = albumCursor.selected(favorites.albums);
-              if (album) queueAlbum('next', album);
-            },
-          },
-          {
             keys: ['a'],
             scope: 'page',
             group: 'favorites',
@@ -186,16 +176,6 @@
               });
             },
           }),
-          {
-            keys: ['n'],
-            scope: 'page',
-            group: 'favorites',
-            description: 'play next',
-            run: () => {
-              const track = trackCursor.selected(favorites.tracks);
-              if (track) actions.enqueueTrack(track, 'next');
-            },
-          },
           {
             keys: ['a'],
             scope: 'page',

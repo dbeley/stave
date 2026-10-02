@@ -113,7 +113,7 @@ const cursor = new ListCursor();
 onMount(() =>
   app.keyboard.registerAll([
     ...listNavigationBindings(cursor, { hint: true }), // j k gg G ^d ^u, enter if onActivate
-    ...albumListBindings(cursor, () => albums), // enter p n a f L o y
+    ...albumListBindings(cursor, () => albums), // enter p a f L o y
     ...trackListBindings(cursor, () => tracks, { context: () => ctx }),
   ]),
 );
@@ -123,13 +123,16 @@ onMount(() =>
   binds `j/k/↓/↑`, `gg/home`, `G/end`, `ctrl+d/pagedown`, `ctrl+u/pageup`,
   plus `enter` when `onActivate` is given and `o` when `onOpen` is given.
 - `albumListBindings(cursor, () => Album[], {onOpen?, scope?, group?})` —
-  `enter` open (default: album page), `p` play now, `n` play next, `a` append,
-  `f` favourite, `L` listen later, `o` action menu, `y` go to artist.
+  `enter` open (default: album page), `p` play now, `a` append,
+  `f` favourite, `L` listen later, `o` action menu, `y` go to artist. "Play
+  next" lives in the `o` menu so the global `n` stays "next track" on lists.
 - `trackListBindings(cursor, () => Track[], {context?, onActivate?, scope?, group?})` —
-  `enter` play now (replaces the queue with `context` when given), `n`, `a`, `f`,
+  `enter` play now (replaces the queue with `context` when given), `a`, `f`,
   `L`, `o`, `y`.
-- Scope rules: the router consults `overlay` → `queue` → `page` → `global`.
-  Overlays shadow pages; pages shadow globals. Cursor movement is clamped.
+- Scope rules: with no overlay the router consults `page` → `global`; with one
+  open it consults `overlay` → `queue` (queue window only) → `global`. An open
+  overlay is modal, so page shortcuts do not fire behind it. Cursor movement is
+  clamped.
 - Keys are chords: `'g g'` is a two-key sequence, `'G'` is shift+g (capital in
   the binding), modifiers are written `'ctrl+d'`. Printable keys encode Shift in
   the character, so never write `'shift+g'` — write `'G'`.

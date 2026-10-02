@@ -313,6 +313,18 @@ describe('hints()', () => {
     scopes.unshift('overlay');
     expect(router.hints()).toContain(overlayHint);
   });
+
+  it('orders hints by scope priority, not registration order', () => {
+    // The hint bar truncates to a dozen; globals are registered first, so a
+    // registration-order list would push an open overlay's own hints off the end.
+    const router = makeRouter(['overlay', 'queue', 'global']);
+    const globalHint = makeBinding({ keys: ['g'], scope: 'global', hint: true, run: vi.fn() });
+    const queueHint = makeBinding({ keys: ['x'], scope: 'queue', hint: true, run: vi.fn() });
+    const overlayHint = makeBinding({ keys: ['j'], scope: 'overlay', hint: true, run: vi.fn() });
+    router.registerAll([globalHint, overlayHint, queueHint]);
+
+    expect(router.hints().map((binding) => binding.scope)).toEqual(['overlay', 'queue', 'global']);
+  });
 });
 
 describe('handle() return contract', () => {

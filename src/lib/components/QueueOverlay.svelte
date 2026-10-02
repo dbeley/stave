@@ -16,5 +16,5 @@
   note="{items.length} items · {playingIndex + 1}/{items.length}"
   width="min(94vw, 92ch)"
 >
-  <QueueList scope="overlay" />
+  <QueueList scope="overlay" hint={true} />
 </Overlay>

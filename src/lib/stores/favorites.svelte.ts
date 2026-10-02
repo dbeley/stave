@@ -102,15 +102,29 @@ export class FavoritesStore {
   // ------------------------------------------------------------------ checks
 
   isStarred(kind: FavoriteKind, id: string, fallback = false): boolean {
+    /*
+     * Read the reactive list *before* the override can short-circuit. A caller
+     * wraps this in `$derived`, and the first toggle installs an optimistic
+     * override: if the override returned early without touching `this.state`,
+     * the derived would drop its subscription to the starred lists, so the
+     * second (un-star) toggle only changed the lists and never re-rendered —
+     * the star stayed on screen. Touching the list every call keeps the
+     * subscription alive regardless of the override.
+     */
+    const listed = this.isInList(kind, id);
     const override = this.overrides.get(`${kind}:${id}`);
     if (override !== undefined) return override;
+    return listed || fallback;
+  }
+
+  private isInList(kind: FavoriteKind, id: string): boolean {
     switch (kind) {
       case 'album':
-        return this.state.albums.some((album) => album.id === id) || fallback;
+        return this.state.albums.some((album) => album.id === id);
       case 'artist':
-        return this.state.artists.some((artist) => artist.id === id) || fallback;
+        return this.state.artists.some((artist) => artist.id === id);
       case 'track':
-        return this.state.tracks.some((track) => track.id === id) || fallback;
+        return this.state.tracks.some((track) => track.id === id);
     }
   }
 

@@ -2,7 +2,7 @@
   Album page: cover, metadata and the track list.
  *
  * Album-level actions live on capital keys (P/A/F/L) so they never collide with
- * the per-track actions underneath (enter/n/a/f/o/y).
+ * the per-track actions underneath (enter/a/f/o/y).
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
@@ -55,15 +55,6 @@
         description: 'add album to queue',
         run: () => {
           if (album) void actions.enqueueAlbum(album, 'end');
-        },
-      },
-      {
-        keys: ['N'],
-        scope: 'page',
-        group: 'album',
-        description: 'play album next',
-        run: () => {
-          if (album) void actions.enqueueAlbum(album, 'next');
         },
       },
       {
@@ -175,7 +166,7 @@
             [A] queue
           </button>
           <button class="button" onclick={() => void actions.enqueueAlbum(album, 'next')}>
-            [N] next
+            next
           </button>
           <button class="button" onclick={() => void actions.toggleAlbumFavorite(album)}>
             [F] {starred ? 'unstar' : 'star'}

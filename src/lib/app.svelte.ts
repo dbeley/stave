@@ -280,13 +280,22 @@ export class App {
 
   // -------------------------------------------------------------- keyboard
 
-  /** Scope precedence: overlay > queue window > page > global. */
+  /**
+   * Scope precedence: overlay > queue window > global, or page > global.
+   *
+   * An open overlay is modal: the page underneath keeps rendering but stops
+   * receiving keys, so an album-page `A` cannot fire while the queue window is
+   * up. Global bindings stay live so transport and closing the overlay still
+   * work.
+   */
   private activeScopes(): Scope[] {
-    const scopes: Scope[] = [];
-    if (this.ui.state.overlay) scopes.push('overlay');
-    if (this.ui.state.overlay === 'queue') scopes.push('queue');
-    scopes.push('page', 'global');
-    return scopes;
+    if (this.ui.state.overlay) {
+      const scopes: Scope[] = ['overlay'];
+      if (this.ui.state.overlay === 'queue') scopes.push('queue');
+      scopes.push('global');
+      return scopes;
+    }
+    return ['page', 'global'];
   }
 
   /** Route a raw keyboard event through the registry. */

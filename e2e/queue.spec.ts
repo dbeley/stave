@@ -1,7 +1,7 @@
 /**
  * Queue behaviour, driven entirely from the keyboard: the spec's rule is that a
- * track click replaces the queue, `a` appends and `n` inserts after the current
- * item.
+ * track click replaces the queue, `a` appends, and `n` is the transport's
+ * next-track skip (on every page, including album/track lists).
  */
 
 import { expect, test } from '@playwright/test';
@@ -34,7 +34,7 @@ test.describe('queue', () => {
     expect(queueLength(header)).toBeGreaterThan(0);
   });
 
-  test('a appends and n plays next, Q opens the queue window', async ({ page }) => {
+  test('a appends and Q opens the queue window', async ({ page }) => {
     await playFirstAlbumTrack(page);
 
     await keys(page, 'g a');
@@ -59,6 +59,11 @@ test.describe('queue', () => {
     const rows = await dialog.locator('.row').count();
     expect(rows).toBeGreaterThan(0);
 
+    // The hint bar switches to the queue window's own keys while it is open.
+    await expect(
+      page.locator('footer .hint').filter({ hasText: 'remove from queue' }),
+    ).toBeVisible();
+
     await page.keyboard.press('j');
     await page.keyboard.press('x');
     await expect
@@ -69,7 +74,7 @@ test.describe('queue', () => {
     await expect(dialog).toBeHidden();
   });
 
-  test('space toggles playback, twice in a row too, and n queues the next track', async ({
+  test('space toggles playback, twice in a row too, and n skips to the next track', async ({
     page,
   }) => {
     await playFirstAlbumTrack(page);
@@ -98,16 +103,16 @@ test.describe('queue', () => {
     await page.keyboard.press('Space');
     await expect(toggle).toHaveText(settled);
 
-    // On the album page `n` is the page binding ("play next", i.e. insert after the
-    // current track), which shadows the transport's next-track binding. So this
-    // asserts the queue grows rather than the track changing.
-    const before = queueLength((await header.innerText()).replace(/\s+/g, ' '));
+    // `n` is the transport's next-track binding on every page — the page-level
+    // "play next" that used to shadow it is gone — so it advances playback and
+    // leaves the queue length alone.
+    const lengthBefore = queueLength((await header.innerText()).replace(/\s+/g, ' '));
+    const title = page.locator('.bar .identity .title');
+    const firstTitle = await title.innerText();
     await page.keyboard.press('n');
-    await expect
-      .poll(async () => queueLength((await header.innerText()).replace(/\s+/g, ' ')), {
-        timeout: 10_000,
-      })
-      .toBeGreaterThan(before);
+    await expect(title).not.toHaveText(firstTitle, { timeout: 10_000 });
+    const lengthAfter = queueLength((await header.innerText()).replace(/\s+/g, ' '));
+    expect(lengthAfter).toBe(lengthBefore);
   });
 
   test('favourites and listen later toggle from an album row', async ({ page }) => {
@@ -122,5 +127,9 @@ test.describe('queue', () => {
     // Favourites hit the server; the badge follows the optimistic update.
     await page.keyboard.press('f');
     await expect(page.locator('.row.selected .badge.star')).toBeVisible({ timeout: 10_000 });
+
+    // …and the second press must take it away again (it used to stay on screen).
+    await page.keyboard.press('f');
+    await expect(page.locator('.row.selected .badge.star')).toBeHidden({ timeout: 10_000 });
   });
 });

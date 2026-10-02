@@ -6,11 +6,10 @@
  *
  *   enter  open the album page        (also a click)
  *   p      play the album now         (replaces the queue)
- *   n      play next                  (queue after the current track)
  *   a      add to the end of the queue
  *   f      toggle favourite           (server-side star)
  *   L      toggle listen later        (local only, drives the offline cache)
- *   o      action menu
+ *   o      action menu (hold `n` here for "play next")
  *   y      go to the artist
  */
 
@@ -55,16 +54,6 @@ export function albumListBindings(
       run: () => {
         const album = current();
         if (album) void actions.playAlbumNow(album);
-      },
-    },
-    {
-      keys: ['n'],
-      scope,
-      group,
-      description: 'play album next',
-      run: () => {
-        const album = current();
-        if (album) void actions.playAlbumNext(album);
       },
     },
     {

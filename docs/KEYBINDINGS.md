@@ -7,13 +7,16 @@ Chords are written the way they are typed. A **capital** letter means Shift
 (`G`, not `shift+g`) — for printable keys Shift is part of the character. Named
 keys do take the modifier (`ctrl+d`, `escape`). A space separates a sequence:
 `g h` means `g` then `h`. The status bar shows a pending prefix (e.g. `[g]`)
-while a sequence is half-typed; it expires after ~1.2s. While the prefix is
+while a sequence is half-typed; it expires after ~3s. While the prefix is
 pending the hint bar lists **every binding that continues it**, so you can see
 where `g` leads instead of having to remember.
 
 Scope decides who wins when two bindings share a chord:
-**overlay → queue window → page → global**. So an open overlay shadows the page,
-and the page shadows the globals.
+**overlay → queue window → global** while an overlay is open, otherwise
+**page → global**. An open overlay is modal: the page underneath stops
+receiving keys, so a page shortcut (say `A` on an album page) cannot fire while
+you are browsing the queue window. Globals stay live so transport and
+`q`/`escape` still work.
 
 ---
 
@@ -70,11 +73,10 @@ and the page shadows the globals.
 | ------- | ---------------------------------------------------------- |
 | `enter` | open the album page                                        |
 | `p`     | play the album now — **replaces the queue**                |
-| `n`     | play next — queues it right after the current track        |
 | `a`     | add to the end of the queue                                |
 | `f`     | toggle favourite (server-side star)                        |
 | `L`     | toggle listen later (local only; drives the offline cache) |
-| `o`     | action menu                                                |
+| `o`     | action menu (its `n` is "play next")                       |
 | `y`     | go to the artist                                           |
 
 ## Track rows (album page, playlist, artist top tracks, search)
@@ -82,11 +84,10 @@ and the page shadows the globals.
 | key     | action                                                                     |
 | ------- | -------------------------------------------------------------------------- |
 | `enter` | play now — **replaces the queue** with the surrounding list, starting here |
-| `n`     | play next                                                                  |
 | `a`     | add to the end of the queue                                                |
 | `f`     | toggle favourite                                                           |
 | `L`     | toggle listen later for the track's album                                  |
-| `o`     | action menu                                                                |
+| `o`     | action menu (its `n` is "play next")                                       |
 | `y`     | go to the artist                                                           |
 
 ## Artist page
@@ -110,7 +111,6 @@ Capital keys, so they never collide with the per-track ones above.
 | key | action                                |
 | --- | ------------------------------------- |
 | `P` | play the whole album                  |
-| `N` | play the album next                   |
 | `A` | add the album to the end of the queue |
 | `F` | toggle the album's favourite state    |
 | `L` | toggle listen later for this album    |
@@ -174,7 +174,6 @@ keys work as for track/album rows, plus:
 | key | action                                            |
 | --- | ------------------------------------------------- |
 | `a` | add to the end of the queue (album or track rows) |
-| `n` | play next                                         |
 
 ## Settings
 

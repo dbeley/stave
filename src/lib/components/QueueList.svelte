@@ -16,6 +16,48 @@
   } from '$lib/keyboard/list.svelte';
   import { formatDuration, truncate } from '$lib/utils/format';
   import type { Scope } from '$lib/keyboard/registry.svelte';
+  import type { QueueStore } from '$lib/stores/queue.svelte';
+
+  /**
+   * A list cursor that *is* the queue store's own cursor.
+   *
+   * The row you highlight, the row `enter` plays and the row `x`/`J`/`K` act on
+   * are then the same by construction. Before this, QueueList kept a private
+   * `ListCursor` for the highlight while the store kept a second cursor for
+   * remove/reorder; they silently drifted, so `x` deleted whichever row the
+   * store happened to point at (often the playing or last one) rather than the
+   * row on screen. Delegating every mutation to the store leaves exactly one
+   * cursor to keep in sync — and none to forget.
+   */
+  class QueueCursor extends ListCursor {
+    private readonly queue: QueueStore;
+    constructor(queue: QueueStore) {
+      super();
+      this.queue = queue;
+    }
+    override get index(): number {
+      return this.queue.state.cursor;
+    }
+    override get count(): number {
+      return this.queue.length;
+    }
+    override set(index: number): void {
+      this.queue.setCursor(index);
+    }
+    override move(delta: number): number {
+      this.queue.moveCursor(delta);
+      return this.queue.state.cursor;
+    }
+    override first(): void {
+      this.queue.setCursor(0);
+    }
+    override last(): void {
+      this.queue.setCursor(this.queue.length - 1);
+    }
+    override isSelected(index: number): boolean {
+      return this.queue.state.cursor === index;
+    }
+  }
 
   interface Props {
     /** `overlay` inside the queue window, `page` when it is the page's content. */
@@ -32,16 +74,12 @@
     emptyMessage = 'the queue is empty — press enter on an album or track',
   }: Props = $props();
 
-  let cursor = new ListCursor();
+  let cursor = new QueueCursor(app.queue);
   let items = $derived(app.queue.items);
   let playingIndex = $derived(app.queue.state.index);
 
-  // Whoever renders the rows owns the cursor count: without this `move()` clamps
-  // against 0, so j/k are inert and the highlight drifts out of step with the
-  // queue's own selection cursor, which is what reorder/remove act on.
+  // The scrollport `keepCursorRowVisible` measures against.
   let container: HTMLDivElement | undefined = $state();
-
-  $effect(() => cursor.setCount(items.length));
 
   // A long queue is taller than the window it sits in, so the cursor has to drag
   // the list with it — see keepCursorRowVisible.
@@ -96,7 +134,9 @@
         description: 'move item down',
         hint,
         run: () => {
-          if (app.queue.moveCursorItem(1)) cursor.move(1);
+          // The store moves its own cursor with the item, so the highlight
+          // follows without a second, separately-clamped move().
+          app.queue.moveCursorItem(1);
         },
       },
       {
@@ -106,7 +146,7 @@
         description: 'move item up',
         hint,
         run: () => {
-          if (app.queue.moveCursorItem(-1)) cursor.move(-1);
+          app.queue.moveCursorItem(-1);
         },
       },
       {

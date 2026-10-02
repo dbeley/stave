@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import type { Track } from '$lib/domain/types';
 import { KeyboardRouter } from '$lib/keyboard/registry.svelte';
+import { QueueStore } from '$lib/stores/queue.svelte';
 
 const h = vi.hoisted(() => ({
   app: {} as Record<string, any>,
@@ -23,10 +24,17 @@ function buildFakes() {
     { uid: 'q2', track: track('t2', 'Second Song', 'Aurelia Vance', 65) },
     { uid: 'q3', track: track('t3', 'Third Song', 'Other Artist', 3725) },
   ];
+  const clamp = (index: number) => Math.max(0, Math.min(items.length - 1, index));
   const queue = {
     items,
     length: items.length,
-    state: { index: 0, shuffle: false, repeat: 'off' as const, cursor: 0 },
+    state: { index: 0, shuffle: false, repeat: 'off' as 'off' | 'all' | 'one', cursor: 0 },
+    setCursor: vi.fn((index: number) => {
+      queue.state.cursor = clamp(index);
+    }),
+    moveCursor: vi.fn((delta: number) => {
+      queue.state.cursor = clamp(queue.state.cursor + delta);
+    }),
     removeAtCursor: vi.fn(() => 2),
     moveCursorItem: vi.fn(() => true),
     jumpToUid: vi.fn(() => 1),
@@ -185,18 +193,36 @@ describe('QueueOverlay', () => {
     expect(fakes.keyboard.bindings.length).toBe(baseline);
   });
 
-  it('moves the highlight down with j so reorder/remove follow the visible row', async () => {
-    // Regression: the overlay built a ListCursor but never fed it the row count,
-    // so move() clamped against 0 — j/k were inert and the highlight drifted away
-    // from the queue cursor that x/J/K act on.
-    const fakes = mount();
+  it('removes the highlighted row and moves the highlight with j, real queue store', async () => {
+    // Regression guard for two coupled defects. First, the visible highlight
+    // must follow `j`. Second, `x` must remove the row the highlight is on:
+    // QueueList's visible cursor and the store's remove/reorder cursor used to be
+    // two different things, so `x` deleted whichever row the store pointed at.
+    // The hand-rolled mock above shares one cursor and cannot catch either, so
+    // this drives a real QueueStore.
+    const queue = new QueueStore({ persist: false });
+    queue.set(
+      [
+        track('t1', 'First Song', 'Aurelia Vance', 215),
+        track('t2', 'Second Song', 'Aurelia Vance', 65),
+        track('t3', 'Third Song', 'Other Artist', 3725),
+      ],
+      0,
+    );
+    const fakes = buildFakes();
+    fakes.app.queue = queue as unknown as (typeof fakes)['app']['queue'];
+    install(fakes);
+    render(QueueOverlay);
     await tick();
 
-    const moveDown = bindingFor(fakes, 'j');
-    moveDown.run();
+    bindingFor(fakes, 'j').run();
     await tick();
-
     expect(rowFor('Second Song').textContent).toContain('▸');
     expect(rowFor('First Song').textContent).not.toContain('▸');
+
+    bindingFor(fakes, 'x').run();
+    await tick();
+
+    expect(queue.items.map((item) => item.track.id)).toEqual(['t1', 't3']);
   });
 });
