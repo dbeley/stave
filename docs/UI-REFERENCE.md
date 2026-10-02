@@ -127,8 +127,8 @@ onMount(() =>
   `f` favourite, `L` listen later, `o` action menu, `y` go to artist. "Play
   next" lives in the `o` menu so the global `n` stays "next track" on lists.
 - `trackListBindings(cursor, () => Track[], {context?, onActivate?, scope?, group?})` —
-  `enter` play now (replaces the queue with `context` when given), `a`, `f`,
-  `L`, `o`, `y`.
+  `enter` play now (replaces the queue with `context` when given), `shift+enter`
+  play this track alone, `a`, `f`, `L`, `o`, `y`.
 - Scope rules: with no overlay the router consults `page` → `global`; with one
   open it consults `overlay` → `queue` (queue window only) → `global`. An open
   overlay is modal, so page shortcuts do not fire behind it. Cursor movement is

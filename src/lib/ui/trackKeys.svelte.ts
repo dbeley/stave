@@ -3,6 +3,7 @@
  *
  *   enter  play now — the queue is replaced by the surrounding list, starting
  *          at this track (the behaviour the spec asks for)
+ *   shift+enter  play now — this track only, no surrounding list
  *   a      add to the end of the queue
  *   f      toggle favourite
  *   L      listen later for the track's album (albums only, local)
@@ -50,6 +51,18 @@ export function trackListBindings(
       group,
       description: 'play now (replaces queue)',
       run: () => activate(current(), cursor.index),
+    },
+    {
+      keys: ['shift+enter'],
+      scope,
+      group,
+      description: 'play now (this track only)',
+      run: () => {
+        // Deliberately ignores `onActivate`/`context`: the whole point is to
+        // replace the queue with this one track, not the surrounding list.
+        const track = current();
+        if (track) void actions.playTrackNow(track);
+      },
     },
     {
       keys: ['a'],

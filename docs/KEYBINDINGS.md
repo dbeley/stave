@@ -81,14 +81,15 @@ you are browsing the queue window. Globals stay live so transport and
 
 ## Track rows (album page, playlist, artist top tracks, search)
 
-| key     | action                                                                     |
-| ------- | -------------------------------------------------------------------------- |
-| `enter` | play now — **replaces the queue** with the surrounding list, starting here |
-| `a`     | add to the end of the queue                                                |
-| `f`     | toggle favourite                                                           |
-| `L`     | toggle listen later for the track's album                                  |
-| `o`     | action menu (its `n` is "play next")                                       |
-| `y`     | go to the artist                                                           |
+| key           | action                                                                     |
+| ------------- | -------------------------------------------------------------------------- |
+| `enter`       | play now — **replaces the queue** with the surrounding list, starting here |
+| `shift+enter` | play now — **replaces the queue** with this single track                   |
+| `a`           | add to the end of the queue                                                |
+| `f`           | toggle favourite                                                           |
+| `L`           | toggle listen later for the track's album                                  |
+| `o`           | action menu (its `n` is "play next")                                       |
+| `y`           | go to the artist                                                           |
 
 ## Artist page
 

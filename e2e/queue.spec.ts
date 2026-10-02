@@ -34,6 +34,24 @@ test.describe('queue', () => {
     expect(queueLength(header)).toBeGreaterThan(0);
   });
 
+  test('shift+enter replaces the queue with just the selected track', async ({ page }) => {
+    await keys(page, 'g a');
+    await expect(page.locator('.row').first()).toBeVisible({ timeout: 20_000 });
+    await page.keyboard.press('Enter'); // open the album
+    await expect(page.locator('[aria-label="album tracks"] .row').first()).toBeVisible({
+      timeout: 20_000,
+    });
+
+    await page.keyboard.press('Shift+Enter'); // play the highlighted track alone
+
+    await expect
+      .poll(
+        async () => queueLength((await page.locator('header').innerText()).replace(/\s+/g, ' ')),
+        { timeout: 20_000 },
+      )
+      .toBe(1);
+  });
+
   test('a appends and Q opens the queue window', async ({ page }) => {
     await playFirstAlbumTrack(page);
 
