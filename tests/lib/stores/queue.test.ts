@@ -150,6 +150,14 @@ describe('move()', () => {
     expect(queue.tracks.map((t) => t.id)).toEqual(['b', 'c', 'a', 'd']);
   });
 
+  it('keeps the playing item when it is moved', () => {
+    const queue = new QueueStore({ persist: false });
+    queue.set([track('a'), track('b'), track('c')], 1);
+    const uid = queue.current!.uid;
+    queue.move(1, 2);
+    expect(queue.current!.uid).toBe(uid);
+  });
+
   it('moves the playing index down when the playing item is shifted', () => {
     const queue = seeded(['a', 'b', 'c', 'd'], 2);
     queue.move(2, 0);
