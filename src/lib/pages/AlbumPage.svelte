@@ -199,6 +199,7 @@
           ariaLabel="album tracks"
           onActivate={(track, index) =>
             void actions.playTrackNow(track, { tracks, index, label: album.name })}
+          onLongPress={(track) => actions.openTrackActions(track)}
         >
           {#snippet row(track, index)}
             <TrackRow {track} {index} technical={app.settings.state.showTechnicalColumns} />

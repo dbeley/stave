@@ -100,6 +100,7 @@
           ariaLabel="playlist tracks"
           onActivate={(track, index) =>
             void actions.playTrackNow(track, { tracks: entries, index, label: playlist?.name })}
+          onLongPress={(track) => actions.openTrackActions(track)}
         >
           {#snippet row(track, index)}
             <TrackRow

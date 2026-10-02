@@ -29,6 +29,7 @@ function renderList(
     items?: Item[];
     ariaLabel?: string;
     onActivate?: (item: Item, index: number) => void;
+    onLongPress?: (item: Item, index: number) => void;
     cursor?: ListCursor;
   } = {},
 ) {
@@ -44,6 +45,7 @@ function renderList(
       row: row as never,
       keyOf: (item: Item) => item.id,
       onActivate,
+      onLongPress: overrides.onLongPress,
       ariaLabel: overrides.ariaLabel ?? 'tracks',
     } as never,
   });
@@ -103,6 +105,23 @@ describe('ListView', () => {
     await fireEvent.click(options()[1]!);
 
     expect(onActivate).toHaveBeenCalledWith(items[1], 1);
+    expect(cursor.index).toBe(1);
+  });
+
+  it('long-pressing a row moves the cursor and fires onLongPress', async () => {
+    vi.useFakeTimers();
+    const onLongPress = vi.fn();
+    const { cursor } = renderList({ onLongPress });
+    const row = options()[1]!;
+
+    // jsdom has no `PointerEvent`; a `MouseEvent` carrying a `pointerType` read
+    // through `Object.defineProperty` reaches the action's touch guard.
+    const event = new MouseEvent('pointerdown', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'pointerType', { value: 'touch' });
+    row.dispatchEvent(event);
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(onLongPress).toHaveBeenCalledWith(items[1], 1);
     expect(cursor.index).toBe(1);
   });
 

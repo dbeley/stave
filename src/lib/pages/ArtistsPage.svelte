@@ -162,6 +162,9 @@
           row.kind === 'heading' ? `heading-${row.label}` : `artist-${row.artist.id}`}
         ariaLabel="artists"
         onActivate={() => openSelected()}
+        onLongPress={(row) => {
+          if (row.kind === 'artist') actions.openArtistActions(row.artist);
+        }}
         virtualise={true}
       >
         {#snippet row(entry)}

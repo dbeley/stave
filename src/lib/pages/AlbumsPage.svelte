@@ -101,6 +101,7 @@
         keyOf={(album) => album.id}
         ariaLabel="albums"
         onActivate={(album) => actions.openAlbum(album.id)}
+        onLongPress={(album) => actions.openAlbumActions(album)}
       >
         {#snippet row(album)}
           <AlbumRow {album} />

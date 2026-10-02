@@ -273,6 +273,7 @@
                 : `${row.track.id}-${index}`}
         ariaLabel="search results"
         onActivate={(row) => activate(row)}
+        onLongPress={(row) => openActions(row)}
       >
         {#snippet row(entry, index)}
           {#if entry.kind === 'heading'}
