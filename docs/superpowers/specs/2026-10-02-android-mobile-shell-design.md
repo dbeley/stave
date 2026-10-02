@@ -129,9 +129,9 @@ Sharing one table preserves the palette's existing guarantee that the
 on-screen list and its mnemonics cannot drift.
 
 Active-tab logic: `home`/`albums`/`artists`/`now-playing` match by route name;
-`album` and `playlist` detail routes highlight albums; `artist` highlights
-artists; `search` and `settings` highlight nothing. Active styling matches
-`TabStrip`'s accent-filled chip.
+`album` highlights albums and `artist` highlights artists; `playlist`, `search`
+and `settings` highlight nothing. Active styling matches `TabStrip`'s
+accent-filled chip.
 
 ### Hardware back button
 
