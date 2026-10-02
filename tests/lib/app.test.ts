@@ -53,3 +53,9 @@ describe('overlay scope isolation', () => {
     expect(app.settings.state.volume).toBeGreaterThan(before);
   });
 });
+
+describe('capability shell', () => {
+  it('exposes a terminal shell under jsdom defaults', () => {
+    expect(makeApp().capability.shell).toBe('terminal');
+  });
+});

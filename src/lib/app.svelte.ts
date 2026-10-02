@@ -20,6 +20,7 @@ import { OfflineResolver } from '$lib/offline/resolve';
 import type { BlobStore } from '$lib/offline/blobStore';
 import { PlayerStore, type AudioPort } from '$lib/player/player.svelte';
 import { BrowserMediaSession, type MediaSessionPort } from '$lib/player/mediaSession';
+import { CapabilityStore } from '$lib/stores/capability.svelte';
 import { CredentialsStore } from '$lib/stores/credentials.svelte';
 import { FavoritesStore } from '$lib/stores/favorites.svelte';
 import { LibraryStore } from '$lib/stores/library.svelte';
@@ -55,6 +56,7 @@ export class App {
   private client: SubsonicClient | null = null;
 
   readonly settings = new SettingsStore();
+  readonly capability = new CapabilityStore();
   readonly credentials = new CredentialsStore();
   readonly toasts = new ToastStore();
   readonly queue = new QueueStore();

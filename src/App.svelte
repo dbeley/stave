@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import { app } from '$lib/app.svelte';
   import ActionMenu from '$lib/components/ActionMenu.svelte';
+  import BottomNav from '$lib/components/BottomNav.svelte';
   import CommandPalette from '$lib/components/CommandPalette.svelte';
   import HelpOverlay from '$lib/components/HelpOverlay.svelte';
   import HintBar from '$lib/components/HintBar.svelte';
@@ -12,6 +13,7 @@
   import NowPlayingBar from '$lib/components/NowPlayingBar.svelte';
   import QueueOverlay from '$lib/components/QueueOverlay.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
+  import { applyShellToDocument } from '$lib/stores/capability.svelte';
   import { applyThemeToDocument } from '$lib/stores/settings.svelte';
   import AlbumPage from '$lib/pages/AlbumPage.svelte';
   import AlbumsPage from '$lib/pages/AlbumsPage.svelte';
@@ -28,6 +30,7 @@
 
   let route = $derived(app.router.current);
   let connection = $derived(app.connection);
+  let shell = $derived(app.capability.shell);
   let needsLogin = $derived(
     !app.credentials.isComplete || (!app.isConnected && connection.status === 'error'),
   );
@@ -35,6 +38,11 @@
   // Theme tokens live on <html>; the settings store owns the values.
   $effect(() => {
     applyThemeToDocument(app.settings.state);
+  });
+
+  // The shell names the active input model on <html>, so CSS can react to it.
+  $effect(() => {
+    applyShellToDocument(shell);
   });
 
   onMount(() => {
@@ -82,7 +90,11 @@
   </div>
 
   <NowPlayingBar />
-  <HintBar />
+  {#if shell === 'terminal'}
+    <HintBar />
+  {:else if !needsLogin && app.ui.state.overlay !== 'login'}
+    <BottomNav />
+  {/if}
 </div>
 
 {#if app.ui.state.overlay === 'palette'}
