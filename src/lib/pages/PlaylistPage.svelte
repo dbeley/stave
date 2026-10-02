@@ -136,6 +136,15 @@
     gap: 0.1rem 0.5rem;
     margin: 0;
   }
+  /* On a phone the fixed label column leaves too little room for the value. */
+  @media (max-width: 640px) {
+    .meta {
+      grid-template-columns: 1fr;
+    }
+    .meta dd {
+      margin: 0 0 0.3rem;
+    }
+  }
   .meta dt {
     color: var(--fg-faint);
   }

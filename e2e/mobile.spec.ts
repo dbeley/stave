@@ -33,4 +33,14 @@ test.describe('phone viewport', () => {
     await page.getByRole('button', { name: 'go to settings' }).click();
     await expect(page.locator('header')).toContainText('settings');
   });
+
+  test('list rows are large enough to tap', async ({ page }) => {
+    await login(page);
+    await page.goto('/#/albums');
+
+    const row = page.locator('.row').first();
+    await expect(row).toBeVisible();
+    const box = await row.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  });
 });

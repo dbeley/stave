@@ -296,3 +296,26 @@ a:hover {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ==========================================================================
+   Touch shell
+   Only applies when <html> carries data-shell="touch" (coarse pointer), so
+   the desktop terminal shell keeps its denser layout.
+   ========================================================================== */
+
+/* Rows are the primary tap target: give them a comfortable 44px floor. */
+[data-shell='touch'] .row {
+  min-height: 44px;
+  align-items: center;
+}
+
+/* The dense technical column (format/bitrate) is unreadable on a phone and
+   costs horizontal room the title needs. */
+[data-shell='touch'] .tech {
+  display: none;
+}
+
+/* Tabs are tapped, not typed: pad them to a finger-sized target. */
+[data-shell='touch'] .tab {
+  padding: 0.45rem 0.8rem;
+}
