@@ -150,7 +150,13 @@ deps-outdated:
 bump v:
     node scripts/bump-version.mjs {{v}}
 
-# Bump, commit, tag, build artifacts and publish a GitHub release
+# Bump, commit, tag, build artifacts and publish a GitHub release.
+#
+# Includes the release APK when one exists — but only a *signed* one: an
+# unsigned app-release-unsigned.apk looks like a plausible artifact and cannot be
+# installed at all ("Missing META-INF/MANIFEST.MF"), so it is never published.
+# Build it first with `just android-release` (see scripts/android-keystore.sh for
+# the signing key), otherwise the release carries the web bundle alone.
 release v:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -164,8 +170,13 @@ release v:
     just build
     tar -czf "stave-{{v}}-dist.tar.gz" -C dist .
     files=(stave-{{v}}-dist.tar.gz)
-    if compgen -G "android/app/build/outputs/apk/release/*.apk" > /dev/null; then
-      files+=(android/app/build/outputs/apk/release/*.apk)
+    if compgen -G "android/app/build/outputs/apk/release/app-release.apk" > /dev/null; then
+      files+=(android/app/build/outputs/apk/release/app-release.apk)
+      echo "including the signed release APK"
+    elif compgen -G "android/app/build/outputs/apk/release/app-release-unsigned.apk" > /dev/null; then
+      echo "WARNING: found only app-release-unsigned.apk — it cannot be installed," >&2
+      echo "         so it is NOT being attached. Sign it (scripts/android-keystore.sh)" >&2
+      echo "         and re-run, or the release will carry the web bundle only." >&2
     fi
     gh release create "v{{v}}" "${files[@]}" --generate-notes --title "v{{v}}"
 

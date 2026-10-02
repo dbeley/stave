@@ -7,11 +7,15 @@ Gradle/JDK 21 — all supplied by the flake dev shell.
 
 ```sh
 nix develop                 # JDK 21, android-tools, patchelf, Node, pnpm
-just android-sync           # build the web assets, add the platform, cap sync
-just android-build          # debug APK
-just android-release        # release APK
+pnpm exec cap add android   # once per clone: android/ is git-ignored
+just android-sync           # build the web assets, cap sync
+just android-build          # debug APK (signed with the debug key)
+just android-release        # release APK (needs a keystore — see below)
 just android-bundle         # release AAB
 ```
+
+`android/` is **not** in the repository: Capacitor regenerates it, so a fresh clone
+must run `cap add android` once before any of the Gradle recipes work.
 
 Outputs land in `android/app/build/outputs/{apk,bundle}/`.
 
@@ -30,14 +34,53 @@ and accepts the SDK licences so Gradle can find it.
 
 ### Signing a release
 
-Set these before `just android-release`; without them Gradle produces an
-unsigned artifact:
+**Capacitor's template does not sign release builds.** Left alone, `assembleRelease`
+produces `app-release-unsigned.apk`, which Android refuses to install
+(`apksigner verify` → *Missing META-INF/MANIFEST.MF* — measured on a real 3.2 MB
+build). Two consequences shaped how this repo handles it:
+
+- the release recipes splice in a signing configuration (below), so the artifact
+  becomes `app-release.apk` and verifies;
+- `just release` attaches **only** that signed file. An unsigned APK looks like a
+  plausible download and is useless, so it is never published.
+
+Caveat worth knowing: because `android/` is regenerated, this repo needs the
+signing configuration to live *outside* it — a change inside `android/` would be
+lost on the next `cap sync`. It lives in `scripts/android/signing.gradle`, and
+`scripts/android-sign-setup.sh` appends `apply from:` to the generated
+`android/app/build.gradle`. `pnpm android:release` runs that automatically.
+
+Create a key once:
 
 ```sh
-export ANDROID_KEYSTORE_PATH=/path/to/release.jks
+nix develop
+scripts/android-keystore.sh ~/keys/stave-release.jks   # writes android/keystore.properties
+$EDITOR android/keystore.properties                    # put in the real passwords
+just android-release                                   # -> app-release.apk (signed)
+```
+
+Or skip the properties file and pass everything through the environment:
+
+```sh
+export ANDROID_KEYSTORE_PATH=~/keys/stave-release.jks
 export ANDROID_KEYSTORE_PASSWORD=…
 export ANDROID_KEY_ALIAS=…
 export ANDROID_KEY_PASSWORD=…
+just android-release
+```
+
+Both `android/keystore.properties` and `*.jks` are git-ignored — keep the keystore
+out of the repository. **Back it up:** it is the app's identity, and Android refuses
+to update an installed app whose signature changed, so losing the key means users
+must uninstall before they can update.
+
+A debug APK (`just android-build`) needs none of this; it is signed with the debug
+key automatically and is what CI produces.
+
+Check what you built before shipping it:
+
+```sh
+apksigner verify --print-certs android/app/build/outputs/apk/release/app-release.apk
 ```
 
 `just bump <version>` updates `versionName` and derives `versionCode` as

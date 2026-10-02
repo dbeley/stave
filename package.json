@@ -21,8 +21,8 @@
     "verify": "pnpm lint && pnpm test && pnpm build",
     "android:sync": "pnpm build && cap sync android",
     "android:build": "pnpm build && cap sync android && sh scripts/patch-aapt2.sh && cd android && ./gradlew assembleDebug",
-    "android:release": "pnpm build && cap sync android && sh scripts/patch-aapt2.sh && cd android && ./gradlew assembleRelease",
-    "android:bundle": "pnpm build && cap sync android && sh scripts/patch-aapt2.sh && cd android && ./gradlew bundleRelease",
+    "android:release": "pnpm build && cap sync android && sh scripts/android-sign-setup.sh && sh scripts/patch-aapt2.sh && cd android && ./gradlew assembleRelease",
+    "android:bundle": "pnpm build && cap sync android && sh scripts/android-sign-setup.sh && sh scripts/patch-aapt2.sh && cd android && ./gradlew bundleRelease",
     "android:open": "cap open android",
     "e2e": "playwright test",
     "version:bump": "node scripts/bump-version.mjs"

@@ -187,13 +187,13 @@ version kept a separate highlight cursor and swallowed `tab`, which let the two
 drift apart — the next field looked selected while you were still typing into the
 previous one.)
 
-| key | action |
-| --- | --- |
+| key                 | action                                                             |
+| ------------------- | ------------------------------------------------------------------ |
 | `tab` / `shift+tab` | next / previous field — native order, including the connect button |
-| `enter` | connect (on the remember row: tick it, then connect) |
-| `space` | a space in a field, or toggle the checkbox |
-| `alt+j` / `alt+k` | the same movement without leaving the home row |
-| `escape` | close — only when it is not the blocking first-run form |
+| `enter`             | connect (on the remember row: tick it, then connect)               |
+| `space`             | a space in a field, or toggle the checkbox                         |
+| `alt+j` / `alt+k`   | the same movement without leaving the home row                     |
+| `escape`            | close — only when it is not the blocking first-run form            |
 
 ## Touch / mouse
 

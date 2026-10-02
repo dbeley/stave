@@ -362,7 +362,6 @@
                   path = mockSubsonic;
                 }
               ];
-
               # Shellcheck the developer gate script as well. It is deliberately
               # not a `nix run` helper — it drives the dev shell's toolchain and
               # never commits or pushes — but a lint slip in it would be exactly
@@ -374,6 +373,8 @@
                   }
                   ''
                     shellcheck ${./scripts/gate.sh}
+                    shellcheck ${./scripts/android-keystore.sh}
+                    shellcheck ${./scripts/android-sign-setup.sh}
                     touch $out
                   '';
             };
