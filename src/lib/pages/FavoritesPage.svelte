@@ -275,6 +275,7 @@
             keyOf={(artist) => artist.id}
             ariaLabel="favourite artists"
             onActivate={(artist) => openArtist(artist)}
+            onLongPress={(artist) => actions.openArtistActions(artist)}
           >
             {#snippet row(artist)}
               <ArtistRow {artist} />
@@ -291,6 +292,7 @@
             keyOf={(album) => album.id}
             ariaLabel="favourite albums"
             onActivate={(album) => openAlbum(album)}
+            onLongPress={(album) => actions.openAlbumActions(album)}
           >
             {#snippet row(album)}
               <AlbumRow {album} />
@@ -311,6 +313,7 @@
               index,
               label: 'favourites',
             })}
+          onLongPress={(track) => actions.openTrackActions(track)}
         >
           {#snippet row(track, index)}
             <TrackRow

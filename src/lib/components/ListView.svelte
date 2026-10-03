@@ -28,6 +28,7 @@
   import type { Snippet } from 'svelte';
   import type { ListCursor } from '$lib/keyboard/list.svelte';
   import { scrollIntoViewIfNeeded } from '$lib/utils/dom';
+  import { longPress } from '$lib/utils/press';
 
   interface Props {
     items: T[];
@@ -38,6 +39,8 @@
     keyOf?: (item: T, index: number) => string | number;
     /** Click / Enter behaviour. */
     onActivate?: (item: T, index: number) => void;
+    /** Touch long-press behaviour (fires only on touch, per `press.ts`). */
+    onLongPress?: (item: T, index: number) => void;
     ariaLabel?: string;
     /** Keep the last item visible when new ones append. */
     followTail?: boolean;
@@ -56,6 +59,7 @@
     row,
     keyOf,
     onActivate,
+    onLongPress,
     ariaLabel,
     followTail = false,
     virtualise = false,
@@ -207,6 +211,12 @@
     onActivate?.(item, index);
   }
 
+  /** Long-press: move the cursor onto the row first, then open its actions. */
+  function longPressRow(item: T, index: number): void {
+    cursor.set(index);
+    onLongPress?.(item, index);
+  }
+
   function keyOfItem(item: T, index: number): string | number {
     return keyOf ? keyOf(item, index) : index;
   }
@@ -228,6 +238,7 @@
         tabindex="-1"
         data-row={index}
         onclick={() => activate(item, index)}
+        use:longPress={{ onLongPress: () => longPressRow(item, index) }}
         onkeydown={(event) => {
           if (event.key === 'Enter') activate(item, index);
         }}
@@ -249,6 +260,7 @@
         tabindex="-1"
         data-row={index}
         onclick={() => activate(item, index)}
+        use:longPress={{ onLongPress: () => longPressRow(item, index) }}
         onkeydown={(event) => {
           if (event.key === 'Enter') activate(item, index);
         }}

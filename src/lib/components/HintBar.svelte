@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import { app } from '$lib/app.svelte';
+  import ToastLine from '$lib/components/ToastLine.svelte';
   import { formatChord } from '$lib/keyboard/keys';
 
   let hints = $derived(app.keyboard.hints().slice(0, 12));
@@ -19,16 +20,6 @@
   function tailOf(key: string): string {
     return formatChord(key.slice(pending.length + 1));
   }
-  let toast = $derived(app.toasts.latest);
-  let toastClass = $derived(
-    toast?.kind === 'error'
-      ? 'danger'
-      : toast?.kind === 'warn'
-        ? 'warn'
-        : toast?.kind === 'ok'
-          ? 'ok'
-          : 'dim',
-  );
 
   /*
    * Key hints are noise on a touch device: they name keys that do not exist
@@ -75,9 +66,7 @@
 
   <span class="spacer"></span>
 
-  {#if toast}
-    <span class="toast {toastClass}" role="status">{toast.message}</span>
-  {/if}
+  <ToastLine />
 </footer>
 
 <style>
@@ -117,20 +106,6 @@
   }
   .spacer {
     flex: 1;
-  }
-  .toast {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 60ch;
-  }
-  .ok {
-    color: var(--ok);
-  }
-  .warn {
-    color: var(--warn);
-  }
-  .danger {
-    color: var(--danger);
   }
   .dim {
     color: var(--fg-dim);

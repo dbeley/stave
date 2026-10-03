@@ -5,13 +5,18 @@
   import { onMount } from 'svelte';
   import { app } from '$lib/app.svelte';
   import ActionMenu from '$lib/components/ActionMenu.svelte';
+  import BottomNav from '$lib/components/BottomNav.svelte';
   import CommandPalette from '$lib/components/CommandPalette.svelte';
   import HelpOverlay from '$lib/components/HelpOverlay.svelte';
   import HintBar from '$lib/components/HintBar.svelte';
   import LoginOverlay from '$lib/components/LoginOverlay.svelte';
+  import MiniPlayer from '$lib/components/MiniPlayer.svelte';
   import NowPlayingBar from '$lib/components/NowPlayingBar.svelte';
+  import NowPlayingScreen from '$lib/components/NowPlayingScreen.svelte';
   import QueueOverlay from '$lib/components/QueueOverlay.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
+  import ToastLine from '$lib/components/ToastLine.svelte';
+  import { applyShellToDocument } from '$lib/stores/capability.svelte';
   import { applyThemeToDocument } from '$lib/stores/settings.svelte';
   import AlbumPage from '$lib/pages/AlbumPage.svelte';
   import AlbumsPage from '$lib/pages/AlbumsPage.svelte';
@@ -28,6 +33,7 @@
 
   let route = $derived(app.router.current);
   let connection = $derived(app.connection);
+  let shell = $derived(app.capability.shell);
   let needsLogin = $derived(
     !app.credentials.isComplete || (!app.isConnected && connection.status === 'error'),
   );
@@ -35,6 +41,11 @@
   // Theme tokens live on <html>; the settings store owns the values.
   $effect(() => {
     applyThemeToDocument(app.settings.state);
+  });
+
+  // The shell names the active input model on <html>, so CSS can react to it.
+  $effect(() => {
+    applyShellToDocument(shell);
   });
 
   onMount(() => {
@@ -75,14 +86,31 @@
     {:else if route.name === 'search'}
       <SearchPage />
     {:else if route.name === 'now-playing'}
-      <NowPlayingPage />
+      {#if shell === 'touch'}
+        <NowPlayingScreen />
+      {:else}
+        <NowPlayingPage />
+      {/if}
     {:else if route.name === 'settings'}
       <SettingsPage />
     {/if}
   </div>
 
-  <NowPlayingBar />
-  <HintBar />
+  <!-- Touch gets the roomy mini-player; desktop keeps the dense terminal bar.
+       MiniPlayer is suppressed under the blocking login overlay, like BottomNav. -->
+  {#if shell === 'touch'}
+    <ToastLine strip />
+    {#if !needsLogin && app.ui.state.overlay !== 'login'}
+      <MiniPlayer />
+    {/if}
+  {:else}
+    <NowPlayingBar />
+  {/if}
+  {#if shell === 'terminal'}
+    <HintBar />
+  {:else if !needsLogin && app.ui.state.overlay !== 'login'}
+    <BottomNav />
+  {/if}
 </div>
 
 {#if app.ui.state.overlay === 'palette'}

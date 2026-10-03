@@ -4,15 +4,12 @@
 -->
 <script lang="ts">
   import { app } from '$lib/app.svelte';
-  import Meter from '$lib/components/Meter.svelte';
-  import { formatDuration, truncate } from '$lib/utils/format';
+  import SeekBar from '$lib/components/SeekBar.svelte';
+  import TransportControls from '$lib/components/TransportControls.svelte';
+  import { truncate } from '$lib/utils/format';
 
   let player = app.player;
   let track = $derived(player.state.track);
-  let status = $derived(player.state.status);
-  let transport = $derived(status === 'playing' ? '||' : status === 'loading' ? '··' : '>');
-  let position = $derived(player.state.position);
-  let duration = $derived(player.state.duration || track?.durationSec || 0);
 
   let volumeBar = $derived(
     `vol ${'▮'.repeat(Math.round(player.volume * 10))}${'▯'.repeat(10 - Math.round(player.volume * 10))}`,
@@ -22,28 +19,7 @@
 <div class="bar">
   <!-- id="now-playing-bar" is the hook the e2e suite uses to assert playback. -->
   <div class="transport" id="now-playing-bar">
-    <button
-      class="key"
-      title="previous (p)"
-      aria-label="previous track"
-      onclick={() => void player.previous()}
-    >
-      |&lt;&lt;</button
-    ><button
-      class="key"
-      title="play/pause (space)"
-      aria-label="play or pause"
-      onclick={() => void player.toggle()}
-    >
-      {transport}</button
-    ><button
-      class="key"
-      title="next (n)"
-      aria-label="next track"
-      onclick={() => void player.next()}
-    >
-      &gt;&gt;|
-    </button>
+    <TransportControls variant="compact" />
   </div>
 
   {#if track}
@@ -84,10 +60,7 @@
     transport controls stay visible so the bar keeps its shape.
   -->
   {#if track}
-    <span class="position">
-      {formatDuration(position)}/{formatDuration(duration)}
-    </span>
-    <Meter value={player.progress} width={16} />
+    <SeekBar width={16} showTimes />
   {/if}
   <span class="dim vol">{volumeBar}</span>
 </div>
@@ -110,14 +83,6 @@
   .transport {
     display: inline-flex;
     gap: 0.2em;
-  }
-  .key {
-    color: var(--accent);
-    padding: 0 0.15em;
-  }
-  .key:hover {
-    background: var(--accent);
-    color: var(--bg);
   }
   .identity {
     display: flex;
@@ -156,9 +121,6 @@
   .badge.cache {
     color: var(--ok);
     border-color: var(--ok);
-  }
-  .position {
-    color: var(--fg-dim);
   }
   .vol {
     letter-spacing: -0.08em;

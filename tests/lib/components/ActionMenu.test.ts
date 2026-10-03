@@ -61,7 +61,8 @@ function buildFakes() {
     isArtistStarred: vi.fn(() => false),
   };
   const listenLater = { has: vi.fn(() => false) };
-  const app = { ui, favorites, listenLater, keyboard };
+  const capability = { shell: 'terminal' as 'touch' | 'terminal' };
+  const app = { ui, favorites, listenLater, keyboard, capability };
 
   const actions = {
     playAlbumNow: vi.fn(),
@@ -271,6 +272,30 @@ describe('ActionMenu', () => {
     await tick();
     // Re-mounting registers the same set once, not twice.
     expect(fakes.keyboard.bindings.length - baseline).toBe(registered);
+  });
+
+  it('hides the key badges on a touch shell', async () => {
+    const fakes = buildFakes();
+    fakes.app.capability.shell = 'touch';
+    install(fakes);
+    render(ActionMenu);
+    await tick();
+
+    // Rows are still listed, just without the `[p]`-style keyboard hints.
+    expect(screen.getByText('play album now')).toBeTruthy();
+    expect(screen.queryByText('[p]')).toBeNull();
+    expect(screen.queryByText('[escape]')).toBeNull();
+  });
+
+  it('still shows the key badges on the terminal shell', async () => {
+    const fakes = buildFakes();
+    fakes.app.capability.shell = 'terminal';
+    install(fakes);
+    render(ActionMenu);
+    await tick();
+
+    expect(screen.getByText('[p]')).toBeTruthy();
+    expect(screen.getByText('[escape]')).toBeTruthy();
   });
 
   it('moves the highlight so Enter activates the row the user navigated to', async () => {

@@ -187,6 +187,7 @@
             keyOf={(album) => album.id}
             ariaLabel="artist albums"
             onActivate={(album) => actions.openAlbum(album.id)}
+            onLongPress={(album) => actions.openAlbumActions(album)}
           >
             {#snippet row(album)}
               <AlbumRow {album} />
@@ -220,6 +221,7 @@
                 index,
                 label: artist.name,
               })}
+            onLongPress={(track) => actions.openTrackActions(track)}
           >
             {#snippet row(track, index)}
               <TrackRow {track} {index} technical={app.settings.state.showTechnicalColumns} />
@@ -256,6 +258,7 @@
             keyOf={(entry) => entry.id}
             ariaLabel="similar artists"
             onActivate={(entry) => actions.openArtist(entry.id)}
+            onLongPress={(entry) => actions.openArtistActions(entry)}
           >
             {#snippet row(entry)}
               <ArtistRow artist={entry} />

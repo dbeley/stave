@@ -15,6 +15,8 @@
     listNavigationBindings,
   } from '$lib/keyboard/list.svelte';
   import { formatDuration, truncate } from '$lib/utils/format';
+  import { longPress, dropIndex } from '$lib/utils/press';
+  import { actions } from '$lib/ui/actionsRegistry.svelte';
   import type { Scope } from '$lib/keyboard/registry.svelte';
   import type { QueueStore } from '$lib/stores/queue.svelte';
 
@@ -109,6 +111,55 @@
     playItem(index);
   }
 
+  // --------------------------------------------------- touch drag & remove
+
+  /** The drag in progress: `from` is the row being dragged, `to` the drop row. */
+  let dragFrom: number | null = null;
+  let dragTo: number | null = null;
+
+  /** Row geometry for the drag target calculation, measured on each move. */
+  function rowRects(): { top: number; bottom: number }[] {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll<HTMLElement>('.row'), (row) => {
+      const rect = row.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom };
+    });
+  }
+
+  /**
+   * A drag starts on the handle. `touch-action: none` keeps the list from
+   * scrolling, and pointer capture routes the move/up events back to the handle
+   * as the finger travels.
+   */
+  function startDrag(event: PointerEvent, index: number): void {
+    event.stopPropagation();
+    event.preventDefault();
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+    dragFrom = index;
+    dragTo = index;
+  }
+
+  function moveDrag(event: PointerEvent): void {
+    if (dragFrom === null) return;
+    dragTo = dropIndex(event.clientY, rowRects());
+  }
+
+  function endDrag(event: PointerEvent): void {
+    if (dragFrom === null) return;
+    (event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId);
+    const from = dragFrom;
+    const to = dragTo ?? from;
+    dragFrom = null;
+    dragTo = null;
+    if (from !== to) app.queue.move(from, to);
+  }
+
+  function cancelDrag(event: PointerEvent): void {
+    (event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId);
+    dragFrom = null;
+    dragTo = null;
+  }
+
   onMount(() =>
     app.keyboard.registerAll([
       ...listNavigationBindings(cursor, {
@@ -198,7 +249,21 @@
       tabindex="-1"
       onclick={() => playItem(index)}
       onkeydown={(event) => onRowKeydown(event, index)}
+      use:longPress={{ onLongPress: () => actions.openTrackActions(item.track) }}
     >
+      <button
+        type="button"
+        class="drag"
+        aria-label="reorder {item.track.title}"
+        tabindex="-1"
+        onclick={(event) => event.stopPropagation()}
+        onpointerdown={(event) => startDrag(event, index)}
+        onpointermove={(event) => moveDrag(event)}
+        onpointerup={(event) => endDrag(event)}
+        onpointercancel={(event) => cancelDrag(event)}
+      >
+        ≡
+      </button>
       <span class="marker"
         >{index === playingIndex ? '▶' : cursor.isSelected(index) ? '▸' : ' '}</span
       >
@@ -209,6 +274,18 @@
       {#if app.resolver.isCached(item.track.id)}<span class="badge" title="available offline"
           >▣</span
         >{/if}
+      <button
+        type="button"
+        class="remove"
+        aria-label="remove {item.track.title}"
+        tabindex="-1"
+        onclick={(event) => {
+          event.stopPropagation();
+          app.queue.remove([item.uid]);
+        }}
+      >
+        ✕
+      </button>
     </div>
   {/each}
   {#if items.length === 0}
@@ -273,6 +350,34 @@
   .badge {
     flex: none;
     color: var(--ok);
+  }
+  .drag,
+  .remove {
+    flex: none;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+  }
+  .drag {
+    touch-action: none;
+  }
+  .drag:hover,
+  .remove:hover {
+    opacity: 1;
+  }
+  :global([data-shell='touch']) .drag,
+  :global([data-shell='touch']) .remove {
+    min-height: 44px;
+    min-width: 44px;
   }
   .empty {
     color: var(--fg-dim);

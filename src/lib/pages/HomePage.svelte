@@ -118,6 +118,7 @@
         keyOf={(album) => album.id}
         ariaLabel="random albums"
         onActivate={(album) => actions.openAlbum(album.id)}
+        onLongPress={(album) => actions.openAlbumActions(album)}
       >
         {#snippet row(album)}
           <AlbumRow {album} />
@@ -154,6 +155,7 @@
         keyOf={(album) => album.id}
         ariaLabel="recently added albums"
         onActivate={(album) => actions.openAlbum(album.id)}
+        onLongPress={(album) => actions.openAlbumActions(album)}
       >
         {#snippet row(album)}
           <AlbumRow {album} />

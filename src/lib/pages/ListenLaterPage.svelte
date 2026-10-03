@@ -197,6 +197,7 @@
         keyOf={(album) => album.id}
         ariaLabel="listen later"
         onActivate={(album) => actions.openAlbum(album.id)}
+        onLongPress={(album) => actions.openAlbumActions(album)}
       >
         {#snippet row(album)}
           {@const download = app.downloads.entry(album.id)}

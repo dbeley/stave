@@ -166,7 +166,7 @@
 >
   {#each items as item, index (item.key)}
     <div class="row" class:selected={cursor.isSelected(index)}>
-      <span class="key">[{item.key}]</span>
+      {#if app.capability.shell !== 'touch'}<span class="key">[{item.key}]</span>{/if}
       <span class="label">{item.label}</span>
       {#if item.detail}<span class="detail">{item.detail}</span>{/if}
     </div>
@@ -179,6 +179,10 @@
     align-items: baseline;
     gap: 0.6em;
     padding: 0 0.3rem;
+  }
+  :global([data-shell='touch']) .row {
+    align-items: center;
+    min-height: 44px;
   }
   .row.selected {
     background: var(--accent);
