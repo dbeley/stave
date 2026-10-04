@@ -36,6 +36,7 @@ Most likely failure modes for a person using this, each pinned to the owning tas
 ## File Structure
 
 **New**
+
 - `src/lib/stores/capability.svelte.ts` — coarse-pointer capability + `data-shell` writer.
 - `src/lib/ui/destinations.ts` — one destination table for palette + bottom nav.
 - `src/lib/components/BottomNav.svelte`
@@ -47,6 +48,7 @@ Most likely failure modes for a person using this, each pinned to the owning tas
 - `src/lib/native/backButton.ts` — Capacitor back-button glue.
 
 **Modified**
+
 - `src/App.svelte`, `src/lib/app.svelte.ts`, `src/main.ts`
 - `src/lib/stores/ui.svelte.ts`
 - `src/lib/components/{CommandPalette,NowPlayingBar,ListView,QueueList,ActionMenu}.svelte`
@@ -61,10 +63,12 @@ Most likely failure modes for a person using this, each pinned to the owning tas
 ### Task 1: Capability store
 
 **Files:**
+
 - Create: `src/lib/stores/capability.svelte.ts`
 - Test: `tests/lib/stores/capability.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `type Shell = 'touch' | 'terminal'`
   - `interface MediaQueryLike { matches: boolean; addEventListener?(type: 'change', listener: () => void): void; removeEventListener?(type: 'change', listener: () => void): void }`
@@ -77,7 +81,11 @@ Most likely failure modes for a person using this, each pinned to the owning tas
 ```ts
 // tests/lib/stores/capability.test.ts
 import { describe, expect, it, vi } from 'vitest';
-import { CapabilityStore, applyShellToDocument, type MediaQueryLike } from '$lib/stores/capability.svelte';
+import {
+  CapabilityStore,
+  applyShellToDocument,
+  type MediaQueryLike,
+} from '$lib/stores/capability.svelte';
 
 function fakeQuery(matches: boolean) {
   const listeners: (() => void)[] = [];
@@ -86,7 +94,13 @@ function fakeQuery(matches: boolean) {
     addEventListener: (_t, l) => listeners.push(l),
     removeEventListener: () => {},
   };
-  return { query, fire: () => { query.matches = !query.matches; listeners.forEach((l) => l()); } };
+  return {
+    query,
+    fire: () => {
+      query.matches = !query.matches;
+      listeners.forEach((l) => l());
+    },
+  };
 }
 
 describe('CapabilityStore', () => {
@@ -137,20 +151,34 @@ export class CapabilityStore {
   private touchState = $state(false);
 
   constructor(options: CapabilityOptions = {}) {
-    this.resolve = options.matchMedia
-      ?? ((q) => (typeof globalThis.matchMedia === 'function' ? globalThis.matchMedia(q) : null));
+    this.resolve =
+      options.matchMedia ??
+      ((q) => (typeof globalThis.matchMedia === 'function' ? globalThis.matchMedia(q) : null));
     this.query = this.resolve('(pointer: coarse)');
     this.touchState = this.query?.matches ?? false;
     this.query?.addEventListener?.('change', this.onChange);
   }
-  private onChange = () => { this.touchState = this.query?.matches ?? false; };
-  get touch(): boolean { return this.touchState; }
-  get shell(): Shell { return this.touchState ? 'touch' : 'terminal'; }
-  refresh(): void { this.onChange(); }
-  dispose(): void { this.query?.removeEventListener?.('change', this.onChange); }
+  private onChange = () => {
+    this.touchState = this.query?.matches ?? false;
+  };
+  get touch(): boolean {
+    return this.touchState;
+  }
+  get shell(): Shell {
+    return this.touchState ? 'touch' : 'terminal';
+  }
+  refresh(): void {
+    this.onChange();
+  }
+  dispose(): void {
+    this.query?.removeEventListener?.('change', this.onChange);
+  }
 }
 
-export function applyShellToDocument(shell: Shell, root: HTMLElement | null = globalThis.document?.documentElement ?? null): void {
+export function applyShellToDocument(
+  shell: Shell,
+  root: HTMLElement | null = globalThis.document?.documentElement ?? null,
+): void {
   if (root) root.dataset.shell = shell;
 }
 ```
@@ -172,11 +200,13 @@ git commit -m "feat(shell): add coarse-pointer capability store"
 ### Task 2: Shared destinations table
 
 **Files:**
+
 - Create: `src/lib/ui/destinations.ts`
 - Modify: `src/lib/components/CommandPalette.svelte` (replace the inline `DESTINATIONS` with the import)
 - Test: `tests/lib/ui/destinations.test.ts`
 
 **Interfaces:**
+
 - Consumes: `app` from `$lib/app.svelte`.
 - Produces:
   - `interface Destination { key: string; label: string; hint: string; run: () => void; nav?: { activeOn: Route['name'][] } }`
@@ -188,7 +218,16 @@ git commit -m "feat(shell): add coarse-pointer capability store"
 ```ts
 // tests/lib/ui/destinations.test.ts
 import { describe, expect, it, vi } from 'vitest';
-vi.mock('$lib/app.svelte', () => ({ app: { router: { navigate: vi.fn() }, focusSearch: vi.fn(), ui: { openOverlay: vi.fn() }, search: { state: { query: '' } }, capability: { shell: 'terminal' } }, App: class {} }));
+vi.mock('$lib/app.svelte', () => ({
+  app: {
+    router: { navigate: vi.fn() },
+    focusSearch: vi.fn(),
+    ui: { openOverlay: vi.fn() },
+    search: { state: { query: '' } },
+    capability: { shell: 'terminal' },
+  },
+  App: class {},
+}));
 import { DESTINATIONS, NAV_DESTINATIONS } from '$lib/ui/destinations';
 
 describe('destinations', () => {
@@ -200,7 +239,12 @@ describe('destinations', () => {
     for (const d of NAV_DESTINATIONS) expect(DESTINATIONS).toContain(d);
   });
   it('exposes the four expected tabs in order', () => {
-    expect(NAV_DESTINATIONS.map((d) => d.label)).toEqual(['home', 'albums', 'artists', 'now playing']);
+    expect(NAV_DESTINATIONS.map((d) => d.label)).toEqual([
+      'home',
+      'albums',
+      'artists',
+      'now playing',
+    ]);
   });
   it('maps detail routes to their parent tab', () => {
     const albums = NAV_DESTINATIONS.find((d) => d.label === 'albums')!;
@@ -237,10 +281,12 @@ git commit -m "refactor(ui): one destination table for palette and nav"
 ### Task 3: BottomNav component
 
 **Files:**
+
 - Create: `src/lib/components/BottomNav.svelte`
 - Test: `tests/lib/components/BottomNav.test.ts`
 
 **Interfaces:**
+
 - Consumes: `NAV_DESTINATIONS` (Task 2), `app.router.current`, `app.capability.shell`.
 - Produces: a `BottomNav` component with no props. Each tab is a `<button aria-label="go to {label}" aria-current={active ? 'page' : undefined}>` whose click calls the destination's `run()`.
 
@@ -281,10 +327,12 @@ git commit -m "feat(shell): add bottom navigation"
 ### Task 4: Wire the shell into App
 
 **Files:**
+
 - Modify: `src/lib/app.svelte.ts` (construct `capability`), `src/App.svelte`
 - Test: `tests/lib/app.test.ts` (add one case)
 
 **Interfaces:**
+
 - Consumes: `CapabilityStore`, `applyShellToDocument` (Task 1), `BottomNav` (Task 3).
 - Produces: `App.capability: CapabilityStore`.
 
@@ -326,11 +374,13 @@ git commit -m "feat(shell): mount bottom nav under the touch shell"
 ### Task 5: TransportControls and SeekBar
 
 **Files:**
+
 - Create: `src/lib/components/TransportControls.svelte`, `src/lib/components/SeekBar.svelte`
 - Modify: `src/lib/components/NowPlayingBar.svelte`, `src/lib/pages/NowPlayingPage.svelte`
 - Test: `tests/lib/components/SeekBar.test.ts`, `tests/lib/components/TransportControls.test.ts`
 
 **Interfaces:**
+
 - `TransportControls` props: `{ seek10?: boolean }`. Renders previous, play/pause, next (+ ±10s when `seek10`). Calls `player.previous/toggle/next/seekBy`.
 - `SeekBar` props: `{ width?: number; showTimes?: boolean; label?: string }`. Renders `role="slider"` with `aria-valuemin/max/now`; pointer down/move/up map `clientX` to a clamped fraction and call `player.seekFraction`. Renders `Meter` for the fill. No-op when `duration <= 0`.
 
@@ -372,11 +422,13 @@ git commit -m "refactor(player): share transport and add a seekable progress bar
 ### Task 6: MiniPlayer
 
 **Files:**
+
 - Create: `src/lib/components/MiniPlayer.svelte`
 - Modify: `src/App.svelte` (render it instead of `NowPlayingBar` under the touch shell)
 - Test: `tests/lib/components/MiniPlayer.test.ts`
 
 **Interfaces:**
+
 - Consumes: `app.player`, `app.router.navigate`, `SeekBar`/`TransportControls` (Task 5), `CoverArt`.
 - Produces: `MiniPlayer` component (no props). Renders nothing when `app.player.state.track` is undefined.
 
@@ -417,11 +469,13 @@ git commit -m "feat(player): add touch mini-player"
 ### Task 7: Now-playing screen with segmented queue
 
 **Files:**
+
 - Create: `src/lib/components/NowPlayingScreen.svelte`
 - Modify: `src/lib/stores/ui.svelte.ts`, `src/lib/ui/destinations.ts`, `src/App.svelte`
 - Test: `tests/lib/stores/ui.test.ts`, `tests/lib/components/NowPlayingScreen.test.ts`
 
 **Interfaces:**
+
 - `UiState` gains `nowPlayingTab: 'info' | 'queue'` (default `'info'`).
 - `UiStore.showNowPlayingTab(tab: 'info' | 'queue'): void`; `reset()` sets it back to `'info'`.
 - `NowPlayingScreen` (no props) renders a segmented control `[now playing | queue]` bound to `app.ui.state.nowPlayingTab`. `info` shows hero + `TransportControls` + `SeekBar` + flags; `queue` renders `QueueList scope="page"`.
@@ -472,10 +526,12 @@ git commit -m "feat(player): full-screen now playing with a queue segment"
 ### Task 8: longPress action + dropIndex helper
 
 **Files:**
+
 - Create: `src/lib/utils/press.ts`
 - Test: `tests/lib/utils/press.test.ts`
 
 **Interfaces:**
+
 - `function longPress(node: HTMLElement, params: { onLongPress: () => void; delay?: number; slop?: number }): { update(p: typeof params): void; destroy(): void }` — touch/pen only; fires after `delay` (default 500ms); cancels on movement past `slop` (default 10px) or `pointercancel`; after firing, swallows the next `click` via a capture listener.
 - `function dropIndex(clientY: number, rects: { top: number; bottom: number }[]): number` — nearest-row index for a drag.
 
@@ -517,10 +573,12 @@ git commit -m "feat(ui): add long-press action and drop-index helper"
 ### Task 9: ListView long-press and page wiring
 
 **Files:**
+
 - Modify: `src/lib/components/ListView.svelte`, and the pages listed below
 - Test: `tests/lib/components/ListView.test.ts`
 
 **Interfaces:**
+
 - `ListView` props gain `onLongPress?: (item: T, index: number) => void`. On long-press the cursor moves to the row first, then the callback fires.
 
 - [ ] **Step 1: Write the failing test**
@@ -575,10 +633,12 @@ git commit -m "feat(ui): long-press a list row to open its actions"
 ### Task 10: Queue drag-reorder, remove and long-press
 
 **Files:**
+
 - Modify: `src/lib/components/QueueList.svelte`
 - Test: `tests/lib/components/QueueOverlay.test.ts` (or a new `QueueList.test.ts` if the overlay harness is awkward)
 
 **Interfaces:**
+
 - Consumes: `dropIndex` (Task 8), `app.queue.move(from, to)`, `app.queue.remove([uid])`, `actions.openTrackActions`.
 - Produces: each queue row gains a drag handle (`aria-label="reorder {title}"`), a remove button (`aria-label="remove {title}"`), and long-press → track actions. Existing click-to-play and keyboard bindings are unchanged.
 
@@ -597,7 +657,7 @@ Also add a store-level test to `tests/lib/stores/queue.test.ts` pinning Review F
 ```ts
 it('keeps the playing item when it is moved', () => {
   const queue = new QueueStore({ persist: false });
-  queue.set([t1, t2, t3], 1);          // t2 playing at index 1
+  queue.set([t1, t2, t3], 1); // t2 playing at index 1
   const uid = queue.current!.uid;
   queue.move(1, 2);
   expect(queue.current!.uid).toBe(uid);
@@ -630,10 +690,12 @@ git commit -m "feat(queue): touch reorder, remove and long-press actions"
 ### Task 11: ActionMenu on touch
 
 **Files:**
+
 - Modify: `src/lib/components/ActionMenu.svelte`
 - Test: `tests/lib/components/ActionMenu.test.ts`
 
 **Interfaces:**
+
 - The `[key]` badge is rendered only when `app.capability.shell !== 'touch'`; rows get 44px touch height under the touch shell.
 
 - [ ] **Step 1: Write the failing test**
@@ -671,10 +733,12 @@ git commit -m "feat(ui): touch-friendly action menu"
 ### Task 12: Touch sizing and page reflow
 
 **Files:**
+
 - Modify: `src/app.css`, `src/lib/pages/SettingsPage.svelte`, `src/lib/pages/PlaylistPage.svelte`, `e2e/mobile.spec.ts`
 - Test: `e2e/mobile.spec.ts`
 
 **Interfaces:**
+
 - `[data-shell='touch']` global rules: list rows `min-height: 44px`; hide the dense `.tech` column; larger tab padding.
 - `SettingsPage` label grid (`10ch 1fr`) and `PlaylistPage` meta grid (`8ch 1fr`) collapse to one column below 640px.
 
@@ -717,11 +781,13 @@ git commit -m "feat(shell): touch sizing and narrow-screen reflow"
 ### Task 13: Hardware back button
 
 **Files:**
+
 - Create: `src/lib/native/backButton.ts`
 - Modify: `src/lib/app.svelte.ts` (add `handleBack()`), `src/main.ts`
 - Test: `tests/lib/app.test.ts`
 
 **Interfaces:**
+
 - `App.handleBack(): boolean` — if an overlay is open, close it and return `true`; else return `router.back()`.
 - `registerBackButton(opts: { onBack: () => boolean }): Promise<() => void>` — lazily imports `@capacitor/app`; returns a no-op when unavailable; on `backButton`, calls `onBack()`; if it returns false, calls the plugin's `exitApp()`.
 
@@ -767,10 +833,12 @@ git commit -m "feat(android): handle the hardware back button"
 ### Task 14: End-to-end coverage and docs
 
 **Files:**
+
 - Modify: `e2e/mobile.spec.ts`, `docs/ANDROID.md`
 - Test: `e2e/mobile.spec.ts`
 
 **Interfaces:**
+
 - No new production interfaces.
 
 - [ ] **Step 1: Write the failing tests**
@@ -790,7 +858,8 @@ Add a desktop guard (default project):
 test('desktop has no bottom nav and keeps vim keys', async ({ page }) => {
   await login(page);
   await expect(page.getByRole('navigation', { name: 'sections' })).toHaveCount(0);
-  await page.keyboard.press('g'); await page.keyboard.press('a');
+  await page.keyboard.press('g');
+  await page.keyboard.press('a');
   await expect(page.locator('header')).toContainText('albums');
 });
 ```

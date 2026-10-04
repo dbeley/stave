@@ -118,12 +118,12 @@ Move `DESTINATIONS` out of `CommandPalette.svelte` into a shared
 `src/lib/ui/destinations.ts`. The palette renders all destinations; `BottomNav`
 renders the four-tab subset:
 
-| tab | route |
-| --- | --- |
-| home | `{ name: 'home' }` |
-| albums | `{ name: 'albums', sort: 'newest' }` |
-| artists | `{ name: 'artists' }` |
-| now playing | `{ name: 'now-playing' }` |
+| tab         | route                                |
+| ----------- | ------------------------------------ |
+| home        | `{ name: 'home' }`                   |
+| albums      | `{ name: 'albums', sort: 'newest' }` |
+| artists     | `{ name: 'artists' }`                |
+| now playing | `{ name: 'now-playing' }`            |
 
 Sharing one table preserves the palette's existing guarantee that the
 on-screen list and its mnemonics cannot drift.
