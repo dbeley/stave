@@ -69,7 +69,7 @@
             inherit src;
             pname = "stave";
             version = pkgVersion;
-            hash = "sha256-ott6DelfftduTRFwlO/i0Tl5N6myk1TiSy2hXhpq56g=";
+            hash = "sha256-ynmb9j2+HXJCeFlJSGJKIrEnC19GKV0TCAgH5ccCmAk=";
             fetcherVersion = 4;
           };
 
