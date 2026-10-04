@@ -84,11 +84,22 @@ export function longPress(node: HTMLElement, params: LongPressParams): LongPress
         event.stopPropagation();
         clearSwallow();
       };
+      /*
+       * Disarm on the next press. The click that follows the finger lifting
+       * arrives *before* any new `pointerdown`, so this keeps the one-shot
+       * behaviour while guaranteeing a stale swallow cannot eat an unrelated tap.
+       * Android's long-press often emits `contextmenu` and no click at all, which
+       * left the swallow armed — so the next tap (on the menu item just opened)
+       * did nothing.
+       */
+      const disarm = () => clearSwallow();
       window.addEventListener('click', swallow, { capture: true });
       window.addEventListener('contextmenu', swallow, { capture: true });
+      window.addEventListener('pointerdown', disarm, { capture: true });
       removeSwallow = () => {
         window.removeEventListener('click', swallow, { capture: true });
         window.removeEventListener('contextmenu', swallow, { capture: true });
+        window.removeEventListener('pointerdown', disarm, { capture: true });
       };
 
       current.onLongPress();

@@ -136,6 +136,34 @@ test.describe('phone viewport', () => {
     await expect(page.getByRole('dialog', { name: 'actions' })).toBeVisible();
   });
 
+  test('tapping an item in the long-press menu actually runs it', async ({ page }) => {
+    await login(page);
+    await page.goto('/#/albums');
+
+    const albumRow = page.locator('.row').first();
+    await expect(albumRow).toBeVisible({ timeout: 20_000 });
+    await albumRow.click();
+
+    const trackRow = page.locator('[aria-label="album tracks"] .row').first();
+    await expect(trackRow).toBeVisible({ timeout: 20_000 });
+
+    await longPress(page, trackRow);
+    const menu = page.getByRole('dialog', { name: 'actions' });
+    await expect(menu).toBeVisible();
+
+    /*
+     * On touch this menu is the only route to these actions, so the rows have to
+     * be tappable. They were keyboard-only (bindings, no click handler), and the
+     * long-press's click swallow also ate the first tap — so the menu opened and
+     * then did nothing at all.
+     */
+    await menu.getByRole('button', { name: /play now/ }).click();
+
+    await expect(menu).toBeHidden();
+    // Something is playing, which it was not before the tap.
+    await expect(page.locator('header')).toContainText('≡', { timeout: 20_000 });
+  });
+
   test('tapping the progress bar seeks', async ({ page }) => {
     await login(page);
     await playFirstAlbumTrack(page);

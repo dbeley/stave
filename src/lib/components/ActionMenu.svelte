@@ -165,7 +165,24 @@
   width="min(92vw, 66ch)"
 >
   {#each items as item, index (item.key)}
-    <div class="row" class:selected={cursor.isSelected(index)}>
+    <!--
+      Tappable, not just keyboard-driven. The rows carried only key bindings, so on
+      a phone — where this menu is the *only* way to reach these actions — tapping a
+      row did nothing at all. The queue list next door already binds clicks on its
+      rows; this is the same thing.
+    -->
+    <div
+      class="row"
+      class:selected={cursor.isSelected(index)}
+      role="button"
+      tabindex="-1"
+      data-command={item.key}
+      onclick={() => choose(item)}
+      onkeydown={(event) => {
+        if (event.key === 'Enter') choose(item);
+      }}
+      onmouseenter={() => cursor.set(index)}
+    >
       {#if app.capability.shell !== 'touch'}<span class="key">[{item.key}]</span>{/if}
       <span class="label">{item.label}</span>
       {#if item.detail}<span class="detail">{item.detail}</span>{/if}
@@ -179,6 +196,7 @@
     align-items: baseline;
     gap: 0.6em;
     padding: 0 0.3rem;
+    cursor: pointer;
   }
   :global([data-shell='touch']) .row {
     align-items: center;

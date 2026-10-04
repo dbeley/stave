@@ -180,6 +180,31 @@ describe('longPress', () => {
     action.destroy();
   });
 
+  it('lets the next tap through when Android emits neither click nor contextmenu', () => {
+    vi.useFakeTimers();
+    const onLongPress = vi.fn();
+    const { node, action } = mountLongPress({ onLongPress });
+
+    node.dispatchEvent(pointer('pointerdown', { pointerType: 'touch' }));
+    vi.advanceTimersByTime(500);
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+
+    // The finger lifts with no click and no contextmenu — the common Android
+    // long-press — so the swallow is still armed when the user taps a menu item.
+    node.dispatchEvent(pointer('pointerup', { pointerType: 'touch' }));
+
+    // That tap begins with a pointerdown, which must disarm the stale swallow…
+    document.body.dispatchEvent(pointer('pointerdown', { pointerType: 'touch' }));
+    const tap = new MouseEvent('click', { bubbles: true, cancelable: true });
+    node.dispatchEvent(tap);
+
+    // …so the tap does what it says. Without the disarm this click was eaten and
+    // the action menu looked dead.
+    expect(tap.defaultPrevented).toBe(false);
+
+    action.destroy();
+  });
+
   it('disarms the swallow when the pointer is cancelled after firing', () => {
     vi.useFakeTimers();
     const onLongPress = vi.fn();

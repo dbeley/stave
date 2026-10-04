@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import type { Album, Track } from '$lib/domain/types';
 import { KeyboardRouter } from '$lib/keyboard/registry.svelte';
@@ -129,6 +129,20 @@ describe('ActionMenu', () => {
     expect(screen.getByText('go to artist')).toBeTruthy();
     // Every row advertises its single-key shortcut.
     expect(screen.getByText('[p]')).toBeTruthy();
+  });
+
+  it('runs a row when it is tapped, not only when its key is pressed', async () => {
+    const fakes = mount();
+    await tick();
+
+    // A phone has no keyboard, so the row itself has to be the control. The rows
+    // were keyboard-only — no click handler at all — which made the menu unusable
+    // on Android, where it is the only route to these actions.
+    const row = screen.getByRole('button', { name: /add to end of queue/ });
+    await fireEvent.click(row);
+
+    expect(fakes.actions.enqueueAlbum).toHaveBeenCalledWith(ALBUM, 'end');
+    expect(fakes.ui.closeActions).toHaveBeenCalled();
   });
 
   it('omits "go to artist" when the album has no artist id', async () => {
