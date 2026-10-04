@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
   createBlobStore,
+  isAndroidPlatform,
   isNativePlatform,
   platformLabel,
   type CapacitorLike,
@@ -119,5 +120,37 @@ describe('platformLabel', () => {
     expect(platformLabel()).toBe('web');
     setGlobalCapacitor({});
     expect(platformLabel()).toBe('web');
+  });
+});
+
+describe('isAndroidPlatform', () => {
+  it('is false without Capacitor', () => {
+    expect(isAndroidPlatform()).toBe(false);
+    expect(isAndroidPlatform(null)).toBe(false);
+  });
+
+  it('is true only on android', () => {
+    expect(isAndroidPlatform({ getPlatform: () => 'android' })).toBe(true);
+    // iOS has real MediaSession support, so it keeps the browser port.
+    expect(isAndroidPlatform({ getPlatform: () => 'ios' })).toBe(false);
+    expect(isAndroidPlatform({ getPlatform: () => 'web' })).toBe(false);
+  });
+
+  it('is false when the platform is unknown or the bridge throws', () => {
+    expect(isAndroidPlatform({})).toBe(false);
+    expect(
+      isAndroidPlatform({
+        getPlatform: () => {
+          throw new Error('no bridge');
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it('reads the global window.Capacitor when no argument is given', () => {
+    setGlobalCapacitor({ getPlatform: () => 'android' });
+    expect(isAndroidPlatform()).toBe(true);
+    setGlobalCapacitor({ getPlatform: () => 'ios' });
+    expect(isAndroidPlatform()).toBe(false);
   });
 });

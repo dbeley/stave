@@ -375,6 +375,7 @@
                     shellcheck ${./scripts/gate.sh}
                     shellcheck ${./scripts/android-keystore.sh}
                     shellcheck ${./scripts/android-sign-setup.sh}
+                    shellcheck ${./scripts/android-media-session.sh}
                     touch $out
                   '';
             };

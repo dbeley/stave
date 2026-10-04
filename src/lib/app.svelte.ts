@@ -13,13 +13,18 @@ import type { Album } from '$lib/domain/types';
 import { createGlobalBindings, createPercentSeekBindings } from '$lib/keyboard/globalBindings';
 import type { Binding, Scope } from '$lib/keyboard/registry.svelte';
 import { KeyboardRouter } from '$lib/keyboard/registry.svelte';
-import { createBlobStore, isNativePlatform } from '$lib/offline/platform';
+import { createBlobStore, isAndroidPlatform, isNativePlatform } from '$lib/offline/platform';
 import { IndexedDbOfflineDatabase } from '$lib/offline/db';
 import { DownloadManager } from '$lib/offline/downloads.svelte';
 import { OfflineResolver } from '$lib/offline/resolve';
 import type { BlobStore } from '$lib/offline/blobStore';
 import { PlayerStore, type AudioPort } from '$lib/player/player.svelte';
-import { BrowserMediaSession, type MediaSessionPort } from '$lib/player/mediaSession';
+import {
+  BrowserMediaSession,
+  NativeMediaSession,
+  type MediaSessionPort,
+} from '$lib/player/mediaSession';
+import { MediaSession } from '@capgo/capacitor-media-session';
 import { CapabilityStore } from '$lib/stores/capability.svelte';
 import { CredentialsStore } from '$lib/stores/credentials.svelte';
 import { FavoritesStore } from '$lib/stores/favorites.svelte';
@@ -50,6 +55,20 @@ export interface AppOptions {
   mediaSession?: MediaSessionPort;
   /** Start with these bindings registered. */
   bindings?: Binding[];
+}
+
+/**
+ * The OS media session, chosen once per platform.
+ *
+ * `navigator.mediaSession` does not exist in the Android WebView, so the browser
+ * port is a silent no-op there — which is why Android had no notification and no
+ * lock-screen controls. The native plugin provides those *and* the
+ * `mediaPlayback` foreground service that keeps the WebView, and therefore
+ * playback, alive while the app is backgrounded.
+ */
+function defaultMediaSession(): MediaSessionPort {
+  if (isAndroidPlatform()) return new NativeMediaSession(MediaSession);
+  return new BrowserMediaSession();
 }
 
 export class App {
@@ -147,7 +166,7 @@ export class App {
       // ever passed in by tests, so production fell back to the no-op and the OS
       // media controls never appeared at all — the class was written, tested and
       // dead. Tests still inject their own.
-      mediaSession: options.mediaSession ?? new BrowserMediaSession(),
+      mediaSession: options.mediaSession ?? defaultMediaSession(),
     });
 
     this.connection = $state<ConnectionState>({

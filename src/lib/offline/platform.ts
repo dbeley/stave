@@ -30,6 +30,17 @@ export function isNativePlatform(capacitor?: CapacitorLike | null): boolean {
   return Boolean(platform && platform !== 'web');
 }
 
+/** True only inside the Android Capacitor shell. */
+export function isAndroidPlatform(capacitor?: CapacitorLike | null): boolean {
+  const cap = capacitor ?? (globalThis as { Capacitor?: CapacitorLike }).Capacitor;
+  if (!cap) return false;
+  try {
+    return typeof cap.getPlatform === 'function' && cap.getPlatform() === 'android';
+  } catch {
+    return false;
+  }
+}
+
 export function createBlobStore(
   db: OfflineDatabase,
   options: { native?: boolean } = {},

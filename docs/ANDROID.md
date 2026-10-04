@@ -36,7 +36,7 @@ and accepts the SDK licences so Gradle can find it.
 
 **Capacitor's template does not sign release builds.** Left alone, `assembleRelease`
 produces `app-release-unsigned.apk`, which Android refuses to install
-(`apksigner verify` → *Missing META-INF/MANIFEST.MF* — measured on a real 3.2 MB
+(`apksigner verify` → _Missing META-INF/MANIFEST.MF_ — measured on a real 3.2 MB
 build). Two consequences shaped how this repo handles it:
 
 - the release recipes splice in a signing configuration (below), so the artifact
@@ -45,7 +45,7 @@ build). Two consequences shaped how this repo handles it:
   plausible download and is useless, so it is never published.
 
 Caveat worth knowing: because `android/` is regenerated, this repo needs the
-signing configuration to live *outside* it — a change inside `android/` would be
+signing configuration to live _outside_ it — a change inside `android/` would be
 lost on the next `cap sync`. It lives in `scripts/android/signing.gradle`, and
 `scripts/android-sign-setup.sh` appends `apply from:` to the generated
 `android/app/build.gradle`. `pnpm android:release` runs that automatically.
@@ -112,35 +112,51 @@ the flake and the APK in step.
   server must allow the app's origin. Navidrome does by default; if you front it
   with a proxy, forward `Access-Control-Allow-Origin`.
 
-## Background playback — current state and what is left
+## Background playback and the media notification
 
-Implemented:
+The Android WebView implements **no part** of the Web Media Session API, so
+`navigator.mediaSession` — the thing that gives you controls in Zen — is a silent
+no-op there. That is why the Android build had no notification and no lock-screen
+controls, and it is also why playback died when the app went to the background:
+with nothing holding the process, Android suspends the WebView, its timers
+throttle and the audio stops.
 
-- `<audio>` playback with `MediaSession` metadata (title/artist/album/cover) and
-  action handlers (`play`, `pause`, `nexttrack`, `previoustrack`, `seekto`), so
-  the OS shows the track and the transport controls work from the lock screen,
-  the notification shade and Bluetooth/head-unit buttons.
-- Playback state and position are kept in sync with the session.
+Both are one fix: `@capgo/capacitor-media-session`. It publishes metadata and
+action handlers through a native `MediaSession`, and it runs a **`mediaPlayback`
+foreground service** for as long as the session is playing or paused — the
+service is what keeps the process, and therefore the WebView and its audio, alive.
 
-**Not yet implemented — be aware of the limitation:** a WebView pauses its audio
-when the app is backgrounded, and Android needs a **foreground service** for
-genuinely uninterrupted background playback. `MediaSession` alone gives the
-controls and metadata but does not hold the audio alive. The honest options,
-in increasing order of effort:
+How it is wired:
 
-1. Keep the screen on while playing (`@capacitor-community/keep-awake`), which
-   covers short listens but is not a real fix.
-2. Add a maintained Capacitor audio plugin that runs a foreground service and
-   owns the audio session; then point `AudioPort` (`src/lib/player/player.svelte.ts`)
-   at it — the port exists precisely so the player does not care which engine
-   produces sound.
-3. Write a small native plugin (Media3/ExoPlayer + `MediaSessionService` + the
-   existing JS `MediaSession` bridge). Best quality, most work.
+- `NativeMediaSession` (`src/lib/player/mediaSession.ts`) implements the existing
+  `MediaSessionPort` by delegating to the plugin, so there is still one port with
+  two backends: the browser keeps `BrowserMediaSession`, Android gets the native
+  one. `defaultMediaSession()` in `src/lib/app.svelte.ts` picks between them.
+- `FOREGROUND_SERVICE_MEDIA_PLAYBACK` is declared by
+  `scripts/android-media-session.sh`, which the Android recipes run right after
+  `cap sync`. `android/` is generated and git-ignored, so this cannot be a hand
+  edit — a regeneration would drop it and the failure only shows up on a device.
+  The plugin declares its own service and `FOREGROUND_SERVICE`, but not this
+  permission, and without it starting a `mediaPlayback` service throws
+  `SecurityException` on Android 14+.
+- No plugin configuration is set, deliberately. Its default — start the service
+  when playback starts, stop it when the session goes idle — is what we want: the
+  notification appears when you press play and disappears when you stop, rather
+  than leaving a permanent "playing" entry in the shade. (`foregroundService:
+  'always'` is the alternative if a persistent service is ever needed.)
 
-Because `PlayerStore` takes its `AudioPort` by injection, option 2 or 3 is a
-change to `createHtmlAudio`'s replacement plus a Capacitor dependency — no page
-or store code has to change. The `docs/ARCHITECTURE.md` "injected dependencies"
-note explains why this is a small change rather than a rewrite.
+**What this does not fix.** The service keeps the *process* alive; it does not
+stop Android from throttling the WebView's JavaScript once the app has been
+backgrounded for a while. If that bites, the symptoms are a stale progress
+indicator and a track that ends without the next one starting. The fix for that is
+to move playback itself off the WebView — a native engine (Media3/ExoPlayer)
+behind the same injected `AudioPort` — which is a larger change and only worth it
+if the throttling actually shows up on your device.
+
+**Verification status.** The build, the spliced permission, the merged manifest
+and the assembled APK are checked mechanically (see the `android:release` recipe).
+On-device behaviour cannot be checked from here — no device — so the notification
+and the background behaviour need one confirmation on a real phone.
 
 ## Navigating without a keyboard
 
