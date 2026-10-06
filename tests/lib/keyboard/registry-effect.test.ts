@@ -45,7 +45,6 @@ describe('KeyboardRouter: registering from an effect', () => {
 
   it('registers the bindings so they are usable', async () => {
     const keyboard = new KeyboardRouter({ activeScopes: () => ['page', 'global'] });
-    let handled = 0;
 
     const { unmount } = render(RegisterInEffect, {
       props: { keyboard, onRun: () => {} },
@@ -53,7 +52,7 @@ describe('KeyboardRouter: registering from an effect', () => {
     await tick();
 
     keyboard.handle({ key: 'j' });
-    handled = keyboard.bindings.filter((binding) => binding.keys.includes('j')).length;
+    const handled = keyboard.bindings.filter((binding) => binding.keys.includes('j')).length;
     expect(handled).toBe(1);
 
     // Unmounting releases them again.

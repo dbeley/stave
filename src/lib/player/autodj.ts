@@ -52,7 +52,7 @@ export async function buildAutoDjQueue(
   // 1. Server similarity, one seed at a time until we have enough.
   for (const seed of seeds) {
     if (collected.length >= count) break;
-    let similar: Track[] = [];
+    let similar: Track[];
     try {
       similar = await request.requestSimilar(seed, count * 2);
     } catch {
@@ -66,7 +66,7 @@ export async function buildAutoDjQueue(
 
   // 2. Local heuristics over a random sample of the library.
   const sampleSize = options.randomSampleSize ?? Math.max(count * 6, 60);
-  let sample: Track[] = [];
+  let sample: Track[];
   try {
     sample = await request.requestRandom(sampleSize);
   } catch {

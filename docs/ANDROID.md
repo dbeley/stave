@@ -143,9 +143,9 @@ How it is wired:
   when playback starts, stop it when the session goes idle — is what we want: the
   notification appears when you press play and disappears when you stop, rather
   than leaving a permanent "playing" entry in the shade. (`foregroundService:
-  'always'` is the alternative if a persistent service is ever needed.)
+'always'` is the alternative if a persistent service is ever needed.)
 
-**What this does not fix.** The service keeps the *process* alive; it does not
+**What this does not fix.** The service keeps the _process_ alive; it does not
 stop Android from throttling the WebView's JavaScript once the app has been
 backgrounded for a while. If that bites, the symptoms are a stale progress
 indicator and a track that ends without the next one starting. The fix for that is

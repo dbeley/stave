@@ -17,10 +17,9 @@
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
-      "$lib": ["src/lib"],
-      "$lib/*": ["src/lib/*"]
+      "$lib": ["./src/lib"],
+      "$lib/*": ["./src/lib/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "tests/**/*.ts", "*.config.ts"]

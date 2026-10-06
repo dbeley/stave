@@ -63,13 +63,13 @@
             filter = srcFilter;
           };
 
-          # The pnpm dependency tree, pinned by hash. Regenerate with:
-          #   just nix-hash   (or nix build 2>&1 | grep 'got:')
+          # The pnpm dependency tree, pinned by hash. `just deps-update` bumps
+          # the deps and rewrites this in place; `just nix-hash` does just the hash.
           pnpmDeps = pkgs.fetchPnpmDeps {
             inherit src;
             pname = "stave";
             version = pkgVersion;
-            hash = "sha256-ynmb9j2+HXJCeFlJSGJKIrEnC19GKV0TCAgH5ccCmAk=";
+            hash = "sha256-WATAFPeM9w9bKyO73B3j6WXHD92BVqLq8AzzrJ5KIhE=";
             fetcherVersion = 4;
           };
 

@@ -103,13 +103,51 @@ nix-build:
 nix-check:
     nix flake check --keep-going --print-build-logs
 
-# Recompute the pnpmDeps hash after dependency changes
+# Recompute pnpmDeps.hash in flake.nix after dependency changes
 nix-hash:
     #!/usr/bin/env bash
     set -uo pipefail
-    out=$(nix build .#default --no-link --print-build-logs 2>&1 || true)
-    echo "$out" | grep -oE 'got: +sha256-[A-Za-z0-9+/=]+' | head -1 | sed 's/got: */hash = "/; s/$/";/' || true
-    echo "↑ paste into flake.nix (pnpmDeps.hash)"
+    flake=flake.nix
+    old=$(grep -oE 'hash = "sha256-[A-Za-z0-9+/=]+"' "$flake" | head -1 | sed 's/hash = "//; s/"$//')
+    restore() {
+      if [ -n "$old" ]; then
+        sed -i "s|hash = \"[^\"]*\"|hash = \"$old\"|" "$flake"
+      fi
+    }
+    done=0
+    trap '[ "$done" -eq 1 ] || restore' EXIT
+
+    got() { printf '%s\n' "$1" | grep -oE 'got: +sha256-[A-Za-z0-9+/=]+' | head -1 | sed 's/got: *//'; }
+
+    out=$(nix build .#default --no-link --print-build-logs 2>&1)
+    if [ $? -eq 0 ]; then
+      echo "pnpmDeps.hash is already up to date"
+      done=1
+      exit 0
+    fi
+    new=$(got "$out")
+
+    if [ -z "$new" ]; then
+      # Stale hash whose old output is still cached: Nix reuses the stale pnpm
+      # store and never reports a mismatch, so the SPA build dies offline with
+      # ERR_PNPM_NO_OFFLINE_TARBALL. Blank the hash to force a rebuild (the fix
+      # nixpkgs' own pnpm-config-hook.sh recommends) and read the hash it prints.
+      sed -i 's|hash = "sha256-[^"]*"|hash = ""|' "$flake"
+      out=$(nix build .#default --no-link --print-build-logs 2>&1)
+      new=$(got "$out")
+    fi
+
+    if [ -z "$new" ]; then
+      echo "$out" >&2
+      echo "could not determine a new pnpmDeps hash — the build failed for another reason" >&2
+      exit 1
+    fi
+
+    # There is exactly one sha256 hash in flake.nix (pnpmDeps); replace it. The
+    # pattern avoids embedding the values, whose +/= would be regex metachars.
+    sed -i "s|hash = \"[^\"]*\"|hash = \"$new\"|" "$flake"
+    done=1
+    echo "pnpmDeps.hash: ${old:-<none>} -> $new"
 
 # Format all .nix files
 nix-format:
@@ -122,20 +160,10 @@ nix-lint:
 
 # ------------------------------------------------------------------ dependencies
 
-# Update npm dependencies (respecting semver ranges) and refresh the lockfile
+# Update everything in one shot: npm deps (latest), flake inputs, pnpmDeps hash
 deps-update:
-    pnpm update
-    pnpm install --lockfile-only
-
-# Update npm dependencies to the newest published versions, then refresh nix
-deps-update-latest:
     pnpm update --latest
     pnpm install --lockfile-only
-    nix flake update
-    @just nix-hash
-
-# Update only the flake inputs (nixpkgs etc.)
-deps-update-nix:
     nix flake update
     @just nix-hash
 
