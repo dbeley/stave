@@ -58,7 +58,10 @@ otherwise be re-implemented in every page. They live once, in
 **One binding table.** `keyboard/registry.svelte.ts` holds bindings that carry their own
 description and group. The router executes them, the hint bar renders the ones
 marked `hint`, and the help overlay renders all of them. A shortcut cannot exist
-without being documented because they are the same record.
+without being documented because they are the same record. The bar offers a
+chord once — by the binding that would actually run it, so a page key shadowing
+a global one is not advertised twice — and keeps the `pinned` one (`?`) when the
+row runs out of width.
 
 ## State: runes, not stores
 
@@ -184,7 +187,8 @@ documents the whole API surface.
 
 **A key binding**: add it to the binding array of the scope it belongs to —
 never add a raw `keydown` listener. It then appears in the help overlay and, if
-you set `hint: true`, in the hint bar.
+you set `hint: true`, in the hint bar. `pinned: true` is only for the key that
+reveals the hints that did not fit the row.
 
 **A server endpoint**: add the endpoint name, a workspace type, a normaliser and
 a client method; keep it cached by default and call `invalidate()` from the

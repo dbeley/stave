@@ -8,6 +8,7 @@ interface BindingInput {
   group?: string;
   description?: string;
   hint?: boolean;
+  pinned?: boolean;
   when?: () => boolean;
   run?: () => void;
 }
@@ -324,6 +325,63 @@ describe('hints()', () => {
     router.registerAll([globalHint, overlayHint, queueHint]);
 
     expect(router.hints().map((binding) => binding.scope)).toEqual(['overlay', 'queue', 'global']);
+  });
+
+  it('offers a chord once, to the binding that would actually run it', () => {
+    // The settings page binds `space` to "activate" and the global layer binds
+    // it to "play / pause". The page wins when routing keys, so the global one
+    // is dead: offering both (as the bar did) documents a key that cannot fire.
+    const router = makeRouter(['page', 'global']);
+    const pageSpace = makeBinding({
+      keys: ['space'],
+      scope: 'page',
+      description: 'activate',
+      hint: true,
+      run: vi.fn(),
+    });
+    const globalSpace = makeBinding({
+      keys: ['space'],
+      scope: 'global',
+      description: 'play / pause',
+      hint: true,
+      run: vi.fn(),
+    });
+    const globalNext = makeBinding({ keys: ['n'], hint: true, run: vi.fn() });
+    router.registerAll([globalSpace, globalNext, pageSpace]);
+
+    expect(router.hints()).toEqual([pageSpace, globalNext]);
+  });
+
+  it('claims a binding whole, so its aliases are not offered again', () => {
+    // The page answers to `=` as well as `+`, so the global binding that
+    // displays `=` is dead — even though it is a different chord on screen.
+    const router = makeRouter(['page', 'global']);
+    const pageVolume = makeBinding({
+      keys: ['+', '='],
+      scope: 'page',
+      description: 'louder',
+      hint: true,
+      run: vi.fn(),
+    });
+    const globalEquals = makeBinding({ keys: ['='], hint: true, run: vi.fn() });
+    router.registerAll([globalEquals, pageVolume]);
+
+    expect(router.hints()).toEqual([pageVolume]);
+  });
+
+  it('passes a pinned hint through untouched', () => {
+    const router = makeRouter(['page', 'global']);
+    const pinned = makeBinding({
+      keys: ['?'],
+      description: 'keyboard help',
+      hint: true,
+      pinned: true,
+      run: vi.fn(),
+    });
+    router.register(pinned);
+
+    expect(router.hints()).toEqual([pinned]);
+    expect(router.hints()[0]?.pinned).toBe(true);
   });
 });
 
