@@ -39,6 +39,10 @@ coverage:
 e2e:
     pnpm exec playwright test
 
+# Regenerate the README screenshots into docs/screenshots/
+screenshots:
+    node scripts/screenshots.mjs
+
 # Integration tests against a REAL Subsonic server (start `just navidrome` first)
 interop:
     STAVE_IT=1 pnpm vitest run tests/interop
