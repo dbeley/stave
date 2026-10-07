@@ -8,8 +8,12 @@ Chords are written the way they are typed. A **capital** letter means Shift
 keys do take the modifier (`ctrl+d`, `escape`). A space separates a sequence:
 `g h` means `g` then `h`. The status bar shows a pending prefix (e.g. `[g]`)
 while a sequence is half-typed; it expires after ~3s. While the prefix is
-pending the hint bar lists **every binding that continues it**, so you can see
-where `g` leads instead of having to remember.
+pending the hint bar lists the bindings that continue it, so you can see where
+`g` leads instead of having to remember.
+
+The hint bar shows as many hints as the window has room for, dropping whole
+entries from the end rather than cutting one in the middle of a label. `?` is
+never dropped: it is how you find the ones that did not fit.
 
 Scope decides who wins when two bindings share a chord:
 **overlay → queue window → global** while an overlay is open, otherwise
@@ -185,7 +189,9 @@ keys work as for track/album rows, plus:
 | `enter` / `space` | activate the row (toggle, cycle, or run an action) |
 
 > On the settings page `h`/`l` are the row values, so they shadow the global
-> seek bindings while that page is focused. That is intentional.
+> seek bindings while that page is focused. `space` activates the focused row
+> for the same reason, so it shadows the global play/pause there. That is
+> intentional — and the hint bar offers only the binding that wins, not both.
 
 ## Connect form
 

@@ -8,7 +8,7 @@
  * there, and is checked here so it stays fixed.
  */
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { keys, login } from './helpers';
 
 test.describe('rendering regressions', () => {
@@ -168,5 +168,111 @@ test.describe('connect popup', () => {
     // …while space still toggles it, which is what a checkbox should do.
     await page.keyboard.press('Space');
     await expect(remember).toBeChecked();
+  });
+});
+
+/**
+ * The hint bar is a single `nowrap` row, and all three of these were measured
+ * in the browser before they were fixed:
+ *
+ * - the same key was offered twice (`[?] keyboard help` from the registry plus a
+ *   hard-coded `[?] help`), and on the settings page both `[␣] activate` and the
+ *   shadowed global `[␣] play / pause`,
+ * - the message line came last and was pushed past the right edge whenever the
+ *   hints overflowed — 0px wide on the home page, off-screen below ~1440,
+ * - an entry that did not fit was clipped mid-label (`[q] back / clos`).
+ */
+test.describe('hint bar', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+  });
+
+  /**
+   * The keys on screen. The hidden measuring copy carries its own class, so
+   * this is the visible row and nothing else.
+   */
+  const shownKeys = (page: Page) =>
+    page.$$eval('footer .hint', (nodes) =>
+      nodes.map((node) => node.querySelector('.key')?.textContent?.trim() ?? ''),
+    );
+
+  const ROUTES: [string, string][] = [
+    ['g h', 'home'],
+    ['g a', 'albums'],
+    ['g r', 'artists'],
+    ['g p', 'playlists'],
+    ['g f', 'favorites'],
+    ['g l', 'listen later'],
+    ['g n', 'now playing'],
+    ['g s', 'settings'],
+  ];
+
+  test('offers each key once, and always offers help', async ({ page }) => {
+    for (const [sequence, title] of ROUTES) {
+      await keys(page, sequence);
+      await expect(page.locator('header')).toContainText(title);
+
+      const shown = await shownKeys(page);
+      expect(shown.length, `no hints on ${title}`).toBeGreaterThan(0);
+      expect(new Set(shown).size, `a key offered twice on ${title} (${shown})`).toBe(shown.length);
+      expect(shown, `help dropped on ${title}`).toContain('[?]');
+    }
+
+    // Narrow enough that most of the row has to go: help still has to be there,
+    // because it is how everything that did not fit is found.
+    await page.setViewportSize({ width: 900, height: 700 });
+    await page.waitForTimeout(300);
+    const narrow = await shownKeys(page);
+    expect(narrow).toContain('[?]');
+    expect(new Set(narrow).size).toBe(narrow.length);
+  });
+
+  test('the message stays on screen when the hints fill the row', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 700 });
+    await page.keyboard.press('z'); // reports the sort it landed on
+
+    const state = await page.evaluate(() => {
+      const footer = document.querySelector('footer.hints');
+      const toast = footer?.querySelector('.toast');
+      if (!footer || !toast) return null;
+      const box = footer.getBoundingClientRect();
+      const rect = toast.getBoundingClientRect();
+      return {
+        width: Math.round(rect.width),
+        right: Math.round(rect.right),
+        boxRight: Math.round(box.right),
+        clientWidth: footer.clientWidth,
+        scrollWidth: footer.scrollWidth,
+      };
+    });
+
+    expect(state).not.toBeNull();
+    // Was 0 wide on the home page and past the right edge below 1440: the hints
+    // ran the full width of the row and the message came after them.
+    expect(state!.width).toBeGreaterThan(0);
+    expect(state!.right).toBeLessThanOrEqual(state!.boxRight + 1);
+    // The row itself can no longer overflow, at any width.
+    expect(state!.scrollWidth).toBeLessThanOrEqual(state!.clientWidth + 1);
+  });
+
+  test('shows whole entries, never one cut mid-label', async ({ page }) => {
+    for (const width of [1440, 1024, 900]) {
+      await page.setViewportSize({ width, height: 700 });
+      await page.waitForTimeout(300);
+
+      const clipped = await page.evaluate(() => {
+        const footer = document.querySelector('footer.hints');
+        if (!footer) return ['no footer'];
+        const box = footer.getBoundingClientRect();
+        return [...footer.querySelectorAll('.hint')]
+          .filter((node) => {
+            const rect = node.getBoundingClientRect();
+            return rect.left < box.left - 1 || rect.right > box.right + 1;
+          })
+          .map((node) => (node.textContent ?? '').replace(/\s+/g, ' ').trim());
+      });
+
+      expect(clipped, `clipped at ${width}px`).toEqual([]);
+    }
   });
 });

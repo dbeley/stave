@@ -240,6 +240,9 @@ export function createGlobalBindings(app: App): Binding[] {
       group: GROUPS.overlays,
       description: 'keyboard help',
       hint: true,
+      // The one hint that is never dropped: it is how the bindings that did not
+      // fit in the bar are discovered.
+      pinned: true,
       run: () => ui.toggleOverlay('help'),
     },
     {

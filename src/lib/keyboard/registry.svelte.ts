@@ -23,6 +23,12 @@ export interface Binding {
   description: string;
   /** Include in the always-visible hint bar. */
   hint?: boolean;
+  /**
+   * Keep this hint even when the bar is too narrow for the others. Only
+   * meaningful with `hint: true`, and only for the key that reveals the ones
+   * that did not fit.
+   */
+  pinned?: boolean;
   /** Shown in the help overlay only when this returns true. */
   when?: () => boolean;
   run: () => void | Promise<void>;
@@ -121,13 +127,26 @@ export class KeyboardRouter {
      * before any page or overlay — so without this an open queue window would
      * have all of its own hints pushed off the end by the globals, which is the
      * opposite of showing what the current context can do.
+     *
+     * A chord is offered once, by the binding that would actually run it: a
+     * lower scope's binding on a chord a higher scope already claimed is left
+     * out. Without that the settings page advertised both `[␣] activate` (page,
+     * which wins) and `[␣] play / pause` (global, shadowed) — the hint bar must
+     * not document a key that cannot fire.
      */
     const out: Binding[] = [];
+    const claimed = new Set<string>();
     for (const scope of scopes) {
       for (const binding of this.bindings) {
-        if (binding.scope === scope && binding.hint === true && (!binding.when || binding.when())) {
-          out.push(binding);
-        }
+        if (binding.scope !== scope || binding.hint !== true) continue;
+        if (binding.when && !binding.when()) continue;
+        // The bar shows one chord per binding (`keys[0]`), so that is the one
+        // that has to be free — but a kept binding claims all of its chords, so
+        // its aliases cannot be offered by a lower scope either.
+        const first = binding.keys[0];
+        if (first === undefined || claimed.has(canonicalSpec(first))) continue;
+        for (const spec of binding.keys) claimed.add(canonicalSpec(spec));
+        out.push(binding);
       }
     }
     return out;
