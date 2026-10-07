@@ -18,6 +18,9 @@ entirely by the keyboard, vim-style.
 └─────────────────────────────────────────────────────────┘
 ```
 
+![stave's home view: random and recently added albums side by side, the status
+bar above and the key hints below](docs/screenshots/home.png)
+
 ---
 
 ## Features
@@ -65,6 +68,54 @@ from the same binding registry the app executes, so it cannot go stale.
 
 ---
 
+## Screenshots
+
+Every picture below is the production build talking to the demo library the
+quick start sets up. `just screenshots` regenerates them from the running app,
+so they follow the UI instead of drifting away from it.
+
+**Browsing**
+
+![the album list: a sort tab strip, then one row per album with its year, track
+count, and the favourite and listen-later badges](docs/screenshots/albums.png)
+
+![an album page: ASCII cover art, the metadata pane with its starred and
+listen-later state, and the track list](docs/screenshots/album.png)
+
+![the artist index: A–Z letter headings with each artist and its album count
+under them](docs/screenshots/artists.png)
+
+![an artist page: albums, top tracks and similar artists in three panes, with
+the biography beside them](docs/screenshots/artist.png)
+
+**Playback**
+
+![now playing: cover, metadata, the block-character progress bar, the transport
+controls, and the queue underneath](docs/screenshots/now-playing.png)
+
+![the queue window: reorder with J/K, remove with x, clear, shuffle, jump with
+enter](docs/screenshots/queue.png)
+
+**Search, playlists and favourites**
+
+![search results split into artists, albums and tracks, with the per-row action
+buttons](docs/screenshots/search.png)
+
+![the playlists page](docs/screenshots/playlists.png)
+
+![favourites: the server-side stars, grouped into artists, albums and tracks](docs/screenshots/favorites.png)
+
+![listen later: a local-only list that drives the offline cache](docs/screenshots/listen-later.png)
+
+**Interface**
+
+![the keyboard help overlay, generated from the same binding registry the app
+executes](docs/screenshots/help.png)
+
+![the settings page, with the connection details underneath](docs/screenshots/settings.png)
+
+---
+
 ## Quick start
 
 Everything is provided by the Nix flake — Node, pnpm, JDK 21, the Android SDK,
@@ -82,6 +133,9 @@ just dev               # vite dev server: http://localhost:5173
 Then point the app at your server in the login form. `just mock` runs the mock
 Subsonic server instead (`:4534`, `admin/admin`), which is what the e2e suite
 uses.
+
+![the connect form: server, username, password, and the remember checkbox
+(which is the only thing that ever stores a password, on this device)](docs/screenshots/connect.png)
 
 Without Nix, any Node 22+ and pnpm will do for the web build
 (`pnpm install && pnpm dev`); `just` is optional but assumed below.
@@ -157,6 +211,12 @@ A `Dockerfile` is included for hosts that are not NixOS (`docker build -t stave 
 Themes are picked with `T` (or in the settings page): `dark`, `light`, `amoled`,
 and — when your deployment supplies one — `host`.
 
+![the album page in the dark theme, which is the default](docs/screenshots/album.png)
+
+![the same album page in the light theme](docs/screenshots/theme-light.png)
+
+![the same album page in the amoled theme, on true black](docs/screenshots/theme-amoled.png)
+
 `host` uses a palette the module writes into the app's runtime config. If you use
 [stylix](https://github.com/nix-community/stylix), its colours are picked up
 automatically, so the app matches the rest of your desktop:
@@ -205,6 +265,16 @@ just android-sync       # build + cap sync + add the platform on first run
 just android-build      # debug APK -> android/app/build/outputs/apk/debug/
 just android-release    # release APK (needs the signing env vars below)
 ```
+
+The same bundle is a responsive app: on a phone the panes stack, the key hints
+give way to a bottom tab bar, and the go-to palette (`:`) becomes the
+navigation.
+
+![the home view on a phone: a single column, with the bottom tab bar](docs/screenshots/mobile-home.png)
+
+![an album page on a phone](docs/screenshots/mobile-album.png)
+
+![the go-to palette on a phone, which doubles as the touch navigation](docs/screenshots/mobile-palette.png)
 
 Signing is driven by the usual environment variables
 (`ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`,
